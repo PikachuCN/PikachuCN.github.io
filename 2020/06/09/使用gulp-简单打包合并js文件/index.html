@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="keywords" content="hexo,个人博客,blog" />
+  <meta name="description" content="邓子乐的札记" />
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://busuanzi.ibruce.info">
+  <link rel="dns-prefetch" href="https://at.alicdn.com">
+  
+  <link rel="dns-prefetch" href="https://widget.daovoice.io">
+  <link rel="dns-prefetch" href="https://widget-static-cdn.daovoice.io">
+  <link rel="dns-prefetch" href="https://im.daovoice.io">
+  
+  
+  
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="https://api.github.com">
+  <link rel="dns-prefetch" href="https://avatars3.githubusercontent.com">
+  
+  <link rel="stylesheet" type="text/css" href="/./style/main.css">
+	<link rel="shortcut icon" href="/favicon.ico" title="Favicon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+	<title>使用Gulp 简单打包合并JS文件</title>
+  
+  
+    <script>(function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/249019c1.js","daovoice");daovoice('init',{app_id: "249019c1"});daovoice('update');
+  </script>
+  
+<meta name="generator" content="Hexo 5.2.0"><link rel="alternate" href="/atom.xml" title="邓子乐的札记" type="application/atom+xml">
+</head>
+<body>
+  <canvas id="pattern-placeholder" height="230"></canvas>
+<div class="navbar-header">
+  <a class="blog-title" href="/">邓子乐的札记</a>
+  <a class="face-img" href="/">
+    <img src="https://tva3.sinaimg.cn/crop.0.0.272.272.180/6824447fgw1eacrzhabwbj207l07lweu.jpg">
+  </a>
+</div>
+<main>
+  <div class="article-title">
+    
+  
+  <h1 class="title">
+    使用Gulp 简单打包合并JS文件
+  </h1>
+  
+
+
+    <ul class="article-info">
+      <li>
+        发布
+        <time datetime="2020-06-08T17:46:36.000Z" itemprop="datePublished">2020-06-09</time>
+      </li>
+      <li>
+        
+    更新 <time datetime="2020-11-08T02:13:05.539Z" itemprop="dateUpdated">2020-11-08</time>
+
+      </li>
+      <li id="busuanzi_container_page_pv">
+        阅读 <span id="busuanzi_value_page_pv"></span>
+      </li>
+    </ul>
+  </div>
+  <div class="container">
+    <div class="article">
+      <div class="content">
+        
+        <div class="overdue-remind">
+          本文最后更新于$day天前，文中所描述的信息可能已发生改变。
+        </div>
+        
+        <p>不是每个人都是需要做持续化集成，也不是每一个人需要做运维自动化，今天我只需要一个小小的需求，就是把多一个JS文件合并并压缩。</p>
+<p>于是我在网站找了几个方案，一个是Webpack，一个是Gulp。</p>
+<p>Webpack要依赖入口文件，我们有一些古老脚本使用了全局变量，Webpack直接给我忽略了，虽然命令简单，直接安装好Webpack Cli后，使用命令行，可以达到快速合并，具体命令如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">webpack-cli 要压缩的文件名1 要压缩的文件名1 -o 压缩后文件名.js</span><br></pre></td></tr></table></figure>
+
+<p>还有一个方案，是使用在线压缩，他虽然使用 gulp ，但是他不支持es5以上语法，</p>
+<p><a target="_blank" rel="noopener" href="https://filesmerge.com/zh/merge-javascript-files">https://filesmerge.com/zh/merge-javascript-files</a></p>
+<p>最后，我们还是尝试快速了解Gulp，来打包自己的JS文件</p>
+<p>首先，我们建一个临时目录</p>
+<p>进入CDM，创建一个NPM环境</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm init -y</span><br></pre></td></tr></table></figure>
+
+<p>然后我们安装所需要的包及依赖。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">npm i -g gulp-cli</span><br><span class="line">npm i -D gulp</span><br><span class="line">npm i -D gulp-uglify &#x2F;&#x2F;压缩</span><br><span class="line">npm i -D gulp-concat &#x2F;&#x2F;合并</span><br><span class="line">npm i -D gulp-babel &#x2F;&#x2F;转换新版本js</span><br><span class="line">npm i -D babel-core &#x2F;&#x2F;babel 核心</span><br><span class="line">npm i -D babel-preset-es2015 &#x2F;&#x2F;bebel插件</span><br></pre></td></tr></table></figure>
+
+<p>安装好后，我们新建一个gulpfile.js文件，这个文件是用来编写压缩规则的。我先把一个最简单的压缩规则写出来，如果只是压缩多个js文件，也不需要更改什么了。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">const &#123; src, dest &#125; &#x3D; require(&#39;gulp&#39;);</span><br><span class="line">var uglify &#x3D; require(&#39;gulp-uglify&#39;);</span><br><span class="line">var concat &#x3D; require(&#39;gulp-concat&#39;);</span><br><span class="line">var babel &#x3D; require(&#39;gulp-babel&#39;);</span><br><span class="line">exports.default &#x3D; function() &#123;</span><br><span class="line">  return src(&#39;js&#x2F;*.js&#39;) &#x2F;&#x2F;输入js文件</span><br><span class="line">.pipe(babel(&#123;</span><br><span class="line">                presets: [&#39;es2015&#39;] &#x2F;&#x2F; es5检查机制</span><br><span class="line">            &#125;))</span><br><span class="line">.pipe(concat(&#39;all.js&#39;)) &#x2F;&#x2F;合并在一起</span><br><span class="line">    .pipe(uglify())  &#x2F;&#x2F;压缩</span><br><span class="line">    .pipe(dest(&#39;output&#x2F;&#39;)); &#x2F;&#x2F;输出目录</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们新建一个js目录把需要压缩的文件放进去，然后在命令行执行 gulp</p>
+<p>等待几秒后，就可以在output目录找到all.js，我们就可以愉快玩耍了~</p>
+<p><img src="https://dengzile.com/wp-content/uploads/2020/06/image-1.png"></p>
+<p>压缩前后大小对比，因为本次压缩包含了全国省份和地区列表，所以大小没小太多，但是如果一个普通js文件压缩比也是不错的。</p>
+<p><img src="https://dengzile.com/wp-content/uploads/2020/06/image-2.png"></p>
+<p>我看看我也做一个在线工具，方便一些只想压缩js的人，Gulp工具挺强大，但是很多功能我也暂时不需要~</p>
+
+      </div>
+        <div class="support-author">
+          <p>感谢您的阅读。 🙏
+          <a href="https://dengzile.com/" target="_blank">关于转载请看这里</a>
+            <!--<a class="btn-pay"  href="#pay-modal">¥ 打赏支持</a>-->
+          </p>
+        </div>
+        <!--
+            <div class="like ">
+              <div class="like-button">
+                <a id="like-note" href="">
+                  <i class="icon-heart"></i>喜欢
+                </a>
+              </div>
+              <span id="likes-count">256</span>
+            </div>
+        -->
+        <div class="otherLink">
+          <div class="previous">
+          </div>
+          <div class="next">
+          </div>
+        </div>
+        <div class="comments" id="comments">
+          
+<script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+<script type="text/javascript">
+  const gitalk = new Gitalk({
+    clientID: '8888a8888',
+    clientSecret: '8888886666666',
+    repo: 'xxxx.github.io',
+    owner: 'admin',
+    admin: ['admin'],
+    id: location.pathname,      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false
+  })
+
+  gitalk.render('comments');
+</script>
+
+
+        </div>
+      </div>
+    </div>
+   </div>
+</main>
+<div class="footer">
+  <div class="info">
+    <p>
+    <a target="_blank" rel="noopener" href="https://hexo.io"> Hexo </a> 强力驱动 |
+      <a target="_blank" rel="noopener" href="https://github.com/Youthink/hexo-themes-yearn"> Yearn </a>
+      主题
+    </p>
+    <p>&copy;2013-2021 © 2021 邓子乐的札记   粤ICP备17119090号-1</p>
+  </div>
+</div>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<script>//console
+  var consoleConfig = '\n欢迎访问 https://hufangyun.com ，围观小猿大圣的博客(づ｡◕‿‿◕｡)づ！\n,\n本博客使用 %cHexo%c 搭建，博客主题为小猿大圣开发的 %chexo-themes-yearn%c ~~~ 🎉🎉🎉 \n\n源码 https://github.com/Youthink/hexo-themes-yearn \n\n如果喜欢可以 star 支持一下 ❤️~\n,\n扫描下面的二维码，在手机上查看博客！\n,https://static.hufangyun.com/blog-url-qrcode-180-180.png,\n 想知道这个效果如何实现的？博客内搜索 console 彩蛋 🚀 ！\n'.split(',');
+  var canConsole = false;
+  var consoleInfo = (function(consoleConfig) {
+  if (!canConsole || !consoleConfig || consoleConfig.length < 1) {
+    return;
+  }
+  var consoleColor = '#6190e8';
+  var _console;
+  var backgroundTextStyle = 'padding: 1px 5px;color: #fff;background: ' + consoleColor + ';'
+  var textStyle = 'color: ' + consoleColor + ';';
+
+  consoleConfig.map(o => {
+    var num = (o.match(/%c/g) || []).length;
+    if(/^http(s)?:\/\//.test(o)) {
+      console.log('%c     ', 'background: url(' + o + ') no-repeat left center;font-size: 180px;');
+      return;
+    }
+    if (num > 0) {
+      var logArguments = [];
+      for (var i = 0; i < num; i++) {
+        if (i % 2 === 0) {
+          logArguments.push(backgroundTextStyle);
+        } else {
+          logArguments.push(textStyle);
+        }
+      }
+      (_console = console).log.apply(_console, ['%c' + o, textStyle].concat(logArguments));
+      return;
+    }
+    console.log('%c' + o, textStyle);
+  });
+}(consoleConfig));</script><script type="text/javascript" src="/./js/main.js"></script>
+
+  <script src="//at.alicdn.com/t/font_159214_mvtxvg9me9.js"></script>
+</body>
+</html>

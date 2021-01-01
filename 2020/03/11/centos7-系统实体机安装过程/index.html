@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="keywords" content="hexo,个人博客,blog" />
+  <meta name="description" content="邓子乐的札记" />
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://busuanzi.ibruce.info">
+  <link rel="dns-prefetch" href="https://at.alicdn.com">
+  
+  <link rel="dns-prefetch" href="https://widget.daovoice.io">
+  <link rel="dns-prefetch" href="https://widget-static-cdn.daovoice.io">
+  <link rel="dns-prefetch" href="https://im.daovoice.io">
+  
+  
+  
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="https://api.github.com">
+  <link rel="dns-prefetch" href="https://avatars3.githubusercontent.com">
+  
+  <link rel="stylesheet" type="text/css" href="/./style/main.css">
+	<link rel="shortcut icon" href="/favicon.ico" title="Favicon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+	<title>CentOS7 实体机安装的最佳实践</title>
+  
+  
+    <script>(function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/249019c1.js","daovoice");daovoice('init',{app_id: "249019c1"});daovoice('update');
+  </script>
+  
+<meta name="generator" content="Hexo 5.2.0"><link rel="alternate" href="/atom.xml" title="邓子乐的札记" type="application/atom+xml">
+</head>
+<body>
+  <canvas id="pattern-placeholder" height="230"></canvas>
+<div class="navbar-header">
+  <a class="blog-title" href="/">邓子乐的札记</a>
+  <a class="face-img" href="/">
+    <img src="https://tva3.sinaimg.cn/crop.0.0.272.272.180/6824447fgw1eacrzhabwbj207l07lweu.jpg">
+  </a>
+</div>
+<main>
+  <div class="article-title">
+    
+  
+  <h1 class="title">
+    CentOS7 实体机安装的最佳实践
+  </h1>
+  
+
+
+    <ul class="article-info">
+      <li>
+        发布
+        <time datetime="2020-03-11T11:34:56.000Z" itemprop="datePublished">2020-03-11</time>
+      </li>
+      <li>
+        
+    更新 <time datetime="2020-12-30T19:00:48.703Z" itemprop="dateUpdated">2020-12-31</time>
+
+      </li>
+      <li id="busuanzi_container_page_pv">
+        阅读 <span id="busuanzi_value_page_pv"></span>
+      </li>
+    </ul>
+  </div>
+  <div class="container">
+    <div class="article">
+      <div class="content">
+        
+        <div class="overdue-remind">
+          本文最后更新于$day天前，文中所描述的信息可能已发生改变。
+        </div>
+        
+        <h2 id="0、序章"><a href="#0、序章" class="headerlink" title="0、序章"></a>0、序章</h2><p>0x0 我们平时在阿里云等云服务器配置CentOs7系统很简单，只需要点一点即可，但是我们始终要部署到实体机做一些只有实体机才能做的事情，例如我们要部署OpenSTF服务。于是，我开始尝试安装CentOs之旅。</p>
+<p>0x1 首先要准备一个空U盘</p>
+<p>0x2 进入阿里的镜像下载，为什么要选这个，因为我尝试过其他镜像或者CentOs8，他默认Yum是国外的源众所周知原因，速度太慢，导致很多错误，所以我选择阿里云这个CentOs镜像。下载后，Yum默认是阿里的源。<a target="_blank" rel="noopener" href="https://mirrors.aliyun.com/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1908.iso">CentOS-7-x86_64-DVD-1908.iso</a></p>
+<p><a target="_blank" rel="noopener" href="https://mirrors.aliyun.com/centos/7/isos/x86_64/">https://mirrors.aliyun.com/centos/7/isos/x86_64/</a></p>
+<p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-4.png"></p>
+<p>0x3 下载后，我们需要UltraISO，我们找一个绿色单文件版即可，有一些是无法进行硬盘刻录的，我们必须要选对，如果怕中毒，可以直接选择一个官方版，不用注册可以用所有功能。</p>
+<p><a target="_blank" rel="noopener" href="http://www.upantool.com/qidong/2011/UltraISO_V9.3.6.2750.html">http://www.upantool.com/qidong/2011/UltraISO_V9.3.6.2750.html</a></p>
+<p>0x4 打开镜像后，插入你的空白U盘，选择写入硬盘镜像，选对U盘位置，写入方式为USB-HDD+。</p>
+<p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-5.png"></p>
+<p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-6.png"></p>
+<h2 id="1、开始安装"><a href="#1、开始安装" class="headerlink" title="1、开始安装"></a>1、开始安装</h2><p>0x1 U盘插入电脑后，在Bios使用期进行驱动即可。(某些主板按F11或者F2)，选择第一项进行安装。</p>
+<p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-7.png"></p>
+<p>0x2 按照图文步骤进入下一步</p>
+<p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-8-1024x768.png"></p>
+<p>0x3 在这个界面，我们需要注意几个步骤，软件安装、安装位置、网络及主机名。软件选择建议选择【带GUI界面的服务器】，可以方便在实体机进行一些网络设置而不是只一直打命令。</p>
+<p>我第一次选择最小化安装，连网卡也没打开，ifconfig等常用命令亦未安装，浪费了不少时间研究。</p>
+<p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-9-1024x768.png"></p>
+<p>0x4 安装位置主要选择你的硬盘而不要选错U盘。因为如果你之前是Windows系统，你分区铁定不够，基本需要删掉所有分区。在点击完成的时候，他会提示你回收空间。按照提示回收即可删除所有分区。</p>
+<p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-10-1024x768.png"></p>
+<p>0x5 网络和主机名，Centos默认不会打开任何网络，记得先打开，要不你SSH无法进入。</p>
+<p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-11-1024x768.png"></p>
+<p>0x6 基本配置后，就直接点击开始安装即可，建议先设置Root密码和创建一个用户，因为用户你不创建，进入GUI界面，他也要你强制创建，并且强制要求设置一个强密码，而在这里创建用户，可以直接创建一个无密码用户，方便维护。</p>
+<p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-12-1024x768.png"></p>
+<p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-13-1024x768.png"></p>
+<h2 id="2、结尾"><a href="#2、结尾" class="headerlink" title="2、结尾"></a>2、结尾</h2><p>其实Centos并不难装，只是搜索出来的教程基本在虚拟机安装，而国内的资料挺混乱，也是装了4~5次总结出来的结果，由于默认已经配好Aliyun的源，接下去安装Docker的速度也会大增，而不会受到影响。GUI界面对有实体机来说，比较方便处理一些小毛病，如果在服务器，应该也是不需要的。每一个人都要自己认为最佳实践方式，这个就是我认为暂时最佳实践安装Centos的方法。如果有更好，可以大家分享交流哟！</p>
+
+      </div>
+        <div class="support-author">
+          <p>感谢您的阅读。 🙏
+          <a href="https://dengzile.com/" target="_blank">关于转载请看这里</a>
+            <!--<a class="btn-pay"  href="#pay-modal">¥ 打赏支持</a>-->
+          </p>
+        </div>
+        <!--
+            <div class="like ">
+              <div class="like-button">
+                <a id="like-note" href="">
+                  <i class="icon-heart"></i>喜欢
+                </a>
+              </div>
+              <span id="likes-count">256</span>
+            </div>
+        -->
+        <div class="otherLink">
+          <div class="previous">
+          </div>
+          <div class="next">
+          </div>
+        </div>
+        <div class="comments" id="comments">
+          
+<script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+<script type="text/javascript">
+  const gitalk = new Gitalk({
+    clientID: '8888a8888',
+    clientSecret: '8888886666666',
+    repo: 'xxxx.github.io',
+    owner: 'admin',
+    admin: ['admin'],
+    id: location.pathname,      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false
+  })
+
+  gitalk.render('comments');
+</script>
+
+
+        </div>
+      </div>
+    </div>
+   </div>
+</main>
+<div class="footer">
+  <div class="info">
+    <p>
+    <a target="_blank" rel="noopener" href="https://hexo.io"> Hexo </a> 强力驱动 |
+      <a target="_blank" rel="noopener" href="https://github.com/Youthink/hexo-themes-yearn"> Yearn </a>
+      主题
+    </p>
+    <p>&copy;2013-2021 © 2021 邓子乐的札记   粤ICP备17119090号-1</p>
+  </div>
+</div>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<script>//console
+  var consoleConfig = '\n欢迎访问 https://hufangyun.com ，围观小猿大圣的博客(づ｡◕‿‿◕｡)づ！\n,\n本博客使用 %cHexo%c 搭建，博客主题为小猿大圣开发的 %chexo-themes-yearn%c ~~~ 🎉🎉🎉 \n\n源码 https://github.com/Youthink/hexo-themes-yearn \n\n如果喜欢可以 star 支持一下 ❤️~\n,\n扫描下面的二维码，在手机上查看博客！\n,https://static.hufangyun.com/blog-url-qrcode-180-180.png,\n 想知道这个效果如何实现的？博客内搜索 console 彩蛋 🚀 ！\n'.split(',');
+  var canConsole = false;
+  var consoleInfo = (function(consoleConfig) {
+  if (!canConsole || !consoleConfig || consoleConfig.length < 1) {
+    return;
+  }
+  var consoleColor = '#6190e8';
+  var _console;
+  var backgroundTextStyle = 'padding: 1px 5px;color: #fff;background: ' + consoleColor + ';'
+  var textStyle = 'color: ' + consoleColor + ';';
+
+  consoleConfig.map(o => {
+    var num = (o.match(/%c/g) || []).length;
+    if(/^http(s)?:\/\//.test(o)) {
+      console.log('%c     ', 'background: url(' + o + ') no-repeat left center;font-size: 180px;');
+      return;
+    }
+    if (num > 0) {
+      var logArguments = [];
+      for (var i = 0; i < num; i++) {
+        if (i % 2 === 0) {
+          logArguments.push(backgroundTextStyle);
+        } else {
+          logArguments.push(textStyle);
+        }
+      }
+      (_console = console).log.apply(_console, ['%c' + o, textStyle].concat(logArguments));
+      return;
+    }
+    console.log('%c' + o, textStyle);
+  });
+}(consoleConfig));</script><script type="text/javascript" src="/./js/main.js"></script>
+
+  <script src="//at.alicdn.com/t/font_159214_mvtxvg9me9.js"></script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="keywords" content="hexo,个人博客,blog" />
+  <meta name="description" content="邓子乐的札记" />
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://busuanzi.ibruce.info">
+  <link rel="dns-prefetch" href="https://at.alicdn.com">
+  
+  <link rel="dns-prefetch" href="https://widget.daovoice.io">
+  <link rel="dns-prefetch" href="https://widget-static-cdn.daovoice.io">
+  <link rel="dns-prefetch" href="https://im.daovoice.io">
+  
+  
+  
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="https://api.github.com">
+  <link rel="dns-prefetch" href="https://avatars3.githubusercontent.com">
+  
+  <link rel="stylesheet" type="text/css" href="/./style/main.css">
+	<link rel="shortcut icon" href="/favicon.ico" title="Favicon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+	<title>水星Mesh分布式路由 M6G小测</title>
+  
+  
+    <script>(function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/249019c1.js","daovoice");daovoice('init',{app_id: "249019c1"});daovoice('update');
+  </script>
+  
+<meta name="generator" content="Hexo 5.2.0"><link rel="alternate" href="/atom.xml" title="邓子乐的札记" type="application/atom+xml">
+</head>
+<body>
+  <canvas id="pattern-placeholder" height="230"></canvas>
+<div class="navbar-header">
+  <a class="blog-title" href="/">邓子乐的札记</a>
+  <a class="face-img" href="/">
+    <img src="https://tva3.sinaimg.cn/crop.0.0.272.272.180/6824447fgw1eacrzhabwbj207l07lweu.jpg">
+  </a>
+</div>
+<main>
+  <div class="article-title">
+    
+  
+  <h1 class="title">
+    水星Mesh分布式路由 M6G小测
+  </h1>
+  
+
+
+    <ul class="article-info">
+      <li>
+        发布
+        <time datetime="2020-03-02T14:00:36.000Z" itemprop="datePublished">2020-03-02</time>
+      </li>
+      <li>
+        
+    更新 <time datetime="2020-11-08T02:13:05.521Z" itemprop="dateUpdated">2020-11-08</time>
+
+      </li>
+      <li id="busuanzi_container_page_pv">
+        阅读 <span id="busuanzi_value_page_pv"></span>
+      </li>
+    </ul>
+  </div>
+  <div class="container">
+    <div class="article">
+      <div class="content">
+        
+        <div class="overdue-remind">
+          本文最后更新于$day天前，文中所描述的信息可能已发生改变。
+        </div>
+        
+        <p>一直对Mesh设备想做一个体验，Openwrt需要的道具和配置方式稍微会复杂一些。看到天猫百亿补贴，竟然有超低价！89元/个终端。</p>
+<p>急不及待，买2个试试，因为很多人有这个困扰，路由覆盖家不全面，导致网络不稳定，用信号放大器，只不过是一个WDS中继，而新手机支持802.11s和802.11r。</p>
+<p><img src="https://dengzile.com/wp-content/uploads/2020/03/IMG_20200302_174754.jpg"></p>
+<p>外观感觉还行，178元，你要啥自行车呢！</p>
+<p>链接也很方便，直接插wan口，使用手机配置一下。另外一个，直接按键配置即可，非常便捷！</p>
+<p>因为这个是千兆端口，我连接后测速，很诡异的只有100Mbps。</p>
+<p>于是排查原因，商家竟然送了一条百兆网线。。</p>
+<p>双频1200M也只是Wifi5低端路由的配置，但是对于普通家庭来说，我认为挺足够了。对手机信号黑点位置有很多扩展，无天线设计也很小巧融入家庭环境内。</p>
+<p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-1024x767.png"></p>
+<p>很多年前用廉价路由的界面，界面已经有一个质的飞跃，功能颇齐全。Ipv6也已经支持。</p>
+<p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-1-1024x613.png"></p>
+<p>不太满意是，DDNS服务只有花生壳可选。</p>
+<p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-2-1024x490.png"></p>
+<p>Wifi页面有AP隔离，可以防止一些攻击。</p>
+<p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-3-1024x653.png"></p>
+<p>在线升级、恢复出厂设置都可以控制子设备，很棒。</p>
+<p><img src="https://dengzile.com/wp-content/uploads/2020/03/Screenshot_2020-03-02-21-30-03-343_org.zwanoo.android.speedtest-473x1024.jpg"></p>
+<p>在路由隔壁，200M电信宽带，能跑出299Mbps的成绩。</p>
+<p>而作为主路由，隔了一股墙的2015年买的小米路由器2(R2D)，在带宽规格上，比他略快一些，达到了。 303Mbps</p>
+<p><img src="https://dengzile.com/wp-content/uploads/2020/03/Screenshot_2020-03-02-21-28-58-126_org.zwanoo.android.speedtest-473x1024.jpg"></p>
+<p>对于普通用户来说，一个简单易用，Mesh最低价格路由，有此成绩也实属不易。</p>
+<p>只能吐槽一下商家，明明千兆端口，送了2根百兆网线是什么骚操作。</p>
+<p>路由这类产品，硬件配置是一方面，软件也很重要，至于稳定性，需要慢慢使用才知道。</p>
+
+      </div>
+        <div class="support-author">
+          <p>感谢您的阅读。 🙏
+          <a href="https://dengzile.com/" target="_blank">关于转载请看这里</a>
+            <!--<a class="btn-pay"  href="#pay-modal">¥ 打赏支持</a>-->
+          </p>
+        </div>
+        <!--
+            <div class="like ">
+              <div class="like-button">
+                <a id="like-note" href="">
+                  <i class="icon-heart"></i>喜欢
+                </a>
+              </div>
+              <span id="likes-count">256</span>
+            </div>
+        -->
+        <div class="otherLink">
+          <div class="previous">
+          </div>
+          <div class="next">
+          </div>
+        </div>
+        <div class="comments" id="comments">
+          
+<script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+<script type="text/javascript">
+  const gitalk = new Gitalk({
+    clientID: '8888a8888',
+    clientSecret: '8888886666666',
+    repo: 'xxxx.github.io',
+    owner: 'admin',
+    admin: ['admin'],
+    id: location.pathname,      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false
+  })
+
+  gitalk.render('comments');
+</script>
+
+
+        </div>
+      </div>
+    </div>
+   </div>
+</main>
+<div class="footer">
+  <div class="info">
+    <p>
+    <a target="_blank" rel="noopener" href="https://hexo.io"> Hexo </a> 强力驱动 |
+      <a target="_blank" rel="noopener" href="https://github.com/Youthink/hexo-themes-yearn"> Yearn </a>
+      主题
+    </p>
+    <p>&copy;2013-2021 © 2021 邓子乐的札记   粤ICP备17119090号-1</p>
+  </div>
+</div>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<script>//console
+  var consoleConfig = '\n欢迎访问 https://hufangyun.com ，围观小猿大圣的博客(づ｡◕‿‿◕｡)づ！\n,\n本博客使用 %cHexo%c 搭建，博客主题为小猿大圣开发的 %chexo-themes-yearn%c ~~~ 🎉🎉🎉 \n\n源码 https://github.com/Youthink/hexo-themes-yearn \n\n如果喜欢可以 star 支持一下 ❤️~\n,\n扫描下面的二维码，在手机上查看博客！\n,https://static.hufangyun.com/blog-url-qrcode-180-180.png,\n 想知道这个效果如何实现的？博客内搜索 console 彩蛋 🚀 ！\n'.split(',');
+  var canConsole = false;
+  var consoleInfo = (function(consoleConfig) {
+  if (!canConsole || !consoleConfig || consoleConfig.length < 1) {
+    return;
+  }
+  var consoleColor = '#6190e8';
+  var _console;
+  var backgroundTextStyle = 'padding: 1px 5px;color: #fff;background: ' + consoleColor + ';'
+  var textStyle = 'color: ' + consoleColor + ';';
+
+  consoleConfig.map(o => {
+    var num = (o.match(/%c/g) || []).length;
+    if(/^http(s)?:\/\//.test(o)) {
+      console.log('%c     ', 'background: url(' + o + ') no-repeat left center;font-size: 180px;');
+      return;
+    }
+    if (num > 0) {
+      var logArguments = [];
+      for (var i = 0; i < num; i++) {
+        if (i % 2 === 0) {
+          logArguments.push(backgroundTextStyle);
+        } else {
+          logArguments.push(textStyle);
+        }
+      }
+      (_console = console).log.apply(_console, ['%c' + o, textStyle].concat(logArguments));
+      return;
+    }
+    console.log('%c' + o, textStyle);
+  });
+}(consoleConfig));</script><script type="text/javascript" src="/./js/main.js"></script>
+
+  <script src="//at.alicdn.com/t/font_159214_mvtxvg9me9.js"></script>
+</body>
+</html>

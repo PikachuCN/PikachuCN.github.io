@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="keywords" content="hexo,个人博客,blog" />
+  <meta name="description" content="邓子乐的札记" />
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="dns-prefetch" href="https://busuanzi.ibruce.info">
+  <link rel="dns-prefetch" href="https://at.alicdn.com">
+  
+  <link rel="dns-prefetch" href="https://widget.daovoice.io">
+  <link rel="dns-prefetch" href="https://widget-static-cdn.daovoice.io">
+  <link rel="dns-prefetch" href="https://im.daovoice.io">
+  
+  
+  
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="https://api.github.com">
+  <link rel="dns-prefetch" href="https://avatars3.githubusercontent.com">
+  
+  <link rel="stylesheet" type="text/css" href="/./style/main.css">
+	<link rel="shortcut icon" href="/favicon.ico" title="Favicon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+	<title>C#与ECDH实现</title>
+  
+  
+    <script>(function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/249019c1.js","daovoice");daovoice('init',{app_id: "249019c1"});daovoice('update');
+  </script>
+  
+<meta name="generator" content="Hexo 5.2.0"><link rel="alternate" href="/atom.xml" title="邓子乐的札记" type="application/atom+xml">
+</head>
+<body>
+  <canvas id="pattern-placeholder" height="230"></canvas>
+<div class="navbar-header">
+  <a class="blog-title" href="/">邓子乐的札记</a>
+  <a class="face-img" href="/">
+    <img src="https://tva3.sinaimg.cn/crop.0.0.272.272.180/6824447fgw1eacrzhabwbj207l07lweu.jpg">
+  </a>
+</div>
+<main>
+  <div class="article-title">
+    
+  
+  <h1 class="title">
+    C#与ECDH实现
+  </h1>
+  
+
+
+    <ul class="article-info">
+      <li>
+        发布
+        <time datetime="2019-12-24T13:46:20.000Z" itemprop="datePublished">2019-12-24</time>
+      </li>
+      <li>
+        
+    更新 <time datetime="2020-11-08T02:13:05.510Z" itemprop="dateUpdated">2020-11-08</time>
+
+      </li>
+      <li id="busuanzi_container_page_pv">
+        阅读 <span id="busuanzi_value_page_pv"></span>
+      </li>
+    </ul>
+  </div>
+  <div class="container">
+    <div class="article">
+      <div class="content">
+        
+        <div class="overdue-remind">
+          本文最后更新于$day天前，文中所描述的信息可能已发生改变。
+        </div>
+        
+        <blockquote>
+<p>ECC算法和DH结合使用，用于密钥磋商，这个密钥交换算法称为ECDH。交换双方可以在不共享任何秘密的情况下协商出一个密钥。ECC是建立在基于椭圆曲线的离散对数问题上的密码体制，给定椭圆曲线上的一个点P，一个整数k，求解Q=kP很容易；给定一个点P、Q，知道Q=kP，求整数k确是一个难题。ECDH即建立在此数学难题之上。</p>
+</blockquote>
+<p>ECDH是一个密钥交换算法，常用在微信、QQ协议上。微信的椭圆曲线是 713( secp224r1 )，而QQ是711(secp192k1)。</p>
+<p>经过研究这个算法可以防止中间人攻击，是一个不错的方法。但是，如果能把协议了解透彻，我相信，也可以模拟中间人进行攻击的（参考如何抓取Https封包），但是对于协议不明的协议，能起到一个非常棒的效果。</p>
+<p><a target="_blank" rel="noopener" href="http://www-cs-students.stanford.edu/~tjw/jsbn/ecdh.html">http://www-cs-students.stanford.edu/~tjw/jsbn/ecdh.html</a></p>
+<p><img src="https://dengzile.com/wp-content/uploads/2019/12/image-17-1024x979.png"></p>
+<p>上面是一个ECDH JS算法实现的Demo，通过操作，可以很直观了解到。 Alice、 Bob 从生成私钥、到发送公钥，到通过私钥和对方公钥协商出 secret key 的过程。</p>
+<h2 id="C-实现"><a href="#C-实现" class="headerlink" title="C#实现"></a>C#实现</h2><p>ECDH 有各种椭圆曲线，但是和Java支持的椭圆曲线不一样。What The F?我在UWP <a target="_blank" rel="noopener" href="https://docs.microsoft.com/en-us/uwp/api/windows.security.cryptography.core">Windows.Security.Cryptography.Core</a> 里面找到其他椭圆算法选项，但是不支持Windows From啊？！</p>
+<p>①、原生实现</p>
+<p>C#实现ECDH有几个类</p>
+<p>ECDiffieHellman<br>ECDiffieHellmanCng  </p>
+<p>本来搜到一个叫 ECDiffieHellmanOpenSsl 的类，但是上面写着一句话</p>
+<blockquote>
+<p>Provides cryptographic algorithm implementations and key management for non-Windows systems with OpenSSL.</p>
+</blockquote>
+<p>原来也不支持Windows平台，所以方法比较好只有第三项。</p>
+<p>原生只支持几个椭圆算法，不支持 secp224r1 等。所以很郁闷，于是我找了IBM文档和几个英文文档。 <a target="_blank" rel="noopener" href="https://www.ibm.com/support/knowledgecenter/en/SSLTBW_2.1.0/com.ibm.zos.v2r1.gska100/ecsup.htm">https://www.ibm.com/support/knowledgecenter/en/SSLTBW_2.1.0/com.ibm.zos.v2r1.gska100/ecsup.htm</a> <a target="_blank" rel="noopener" href="http://csharpforwindesk.blogspot.com/2018/02/c-ecdsa-common-curve-between-openssl-c.html">http://csharpforwindesk.blogspot.com/2018/02/c-ecdsa-common-curve-between-openssl-c.html</a></p>
+<p>可以通过指定ECCurve来指定算法（未测试）</p>
+<p>ECDiffieHellman 的使用方法和我上篇RSA使用方法差不多。所以不再重复。</p>
+<p>②、借助OpenSSLNativeClass.dll</p>
+<p>这个方法我认为挺简单，2个函数，就完事。但是需要依赖libeay32.dll和C++库（版本不明）否则会直接运行报错。</p>
+<p>OpenSSLNativeClass.ECDH.GenEcdh(713, ref pub_key_buf, ref pri_key_buf); //生成一个公钥和私钥<br>OpenSSLNativeClass.ECDH.DoEcdh(ManualAuth.authParam.ecdh.nid, strECServrPubKey, pri_key_buf); 利用对方的公钥和自己的私密钥产生共享密钥。</p>
+<p>③、借助BouncyCastle</p>
+<p><img src="https://dengzile.com/wp-content/uploads/2019/12/image-19.png"></p>
+<p>BouncyCastle 适用于Java和C＃的轻量级加密API。 所以和Java加密是同步的，但是我没测试过。所以只提出方法。</p>
+<p>④、借助OpenCrypto.net</p>
+<p>GitHub项目 <a target="_blank" rel="noopener" href="https://github.com/kazuki/opencrypto.net">https://github.com/kazuki/opencrypto.net</a> 里面有方法实现，暂时没研究先记录。</p>
+
+      </div>
+        <div class="support-author">
+          <p>感谢您的阅读。 🙏
+          <a href="https://dengzile.com/" target="_blank">关于转载请看这里</a>
+            <!--<a class="btn-pay"  href="#pay-modal">¥ 打赏支持</a>-->
+          </p>
+        </div>
+        <!--
+            <div class="like ">
+              <div class="like-button">
+                <a id="like-note" href="">
+                  <i class="icon-heart"></i>喜欢
+                </a>
+              </div>
+              <span id="likes-count">256</span>
+            </div>
+        -->
+        <div class="otherLink">
+          <div class="previous">
+          </div>
+          <div class="next">
+          </div>
+        </div>
+        <div class="comments" id="comments">
+          
+<script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+<script type="text/javascript">
+  const gitalk = new Gitalk({
+    clientID: '8888a8888',
+    clientSecret: '8888886666666',
+    repo: 'xxxx.github.io',
+    owner: 'admin',
+    admin: ['admin'],
+    id: location.pathname,      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false
+  })
+
+  gitalk.render('comments');
+</script>
+
+
+        </div>
+      </div>
+    </div>
+   </div>
+</main>
+<div class="footer">
+  <div class="info">
+    <p>
+    <a target="_blank" rel="noopener" href="https://hexo.io"> Hexo </a> 强力驱动 |
+      <a target="_blank" rel="noopener" href="https://github.com/Youthink/hexo-themes-yearn"> Yearn </a>
+      主题
+    </p>
+    <p>&copy;2013-2021 © 2021 邓子乐的札记   粤ICP备17119090号-1</p>
+  </div>
+</div>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<script>//console
+  var consoleConfig = '\n欢迎访问 https://hufangyun.com ，围观小猿大圣的博客(づ｡◕‿‿◕｡)づ！\n,\n本博客使用 %cHexo%c 搭建，博客主题为小猿大圣开发的 %chexo-themes-yearn%c ~~~ 🎉🎉🎉 \n\n源码 https://github.com/Youthink/hexo-themes-yearn \n\n如果喜欢可以 star 支持一下 ❤️~\n,\n扫描下面的二维码，在手机上查看博客！\n,https://static.hufangyun.com/blog-url-qrcode-180-180.png,\n 想知道这个效果如何实现的？博客内搜索 console 彩蛋 🚀 ！\n'.split(',');
+  var canConsole = false;
+  var consoleInfo = (function(consoleConfig) {
+  if (!canConsole || !consoleConfig || consoleConfig.length < 1) {
+    return;
+  }
+  var consoleColor = '#6190e8';
+  var _console;
+  var backgroundTextStyle = 'padding: 1px 5px;color: #fff;background: ' + consoleColor + ';'
+  var textStyle = 'color: ' + consoleColor + ';';
+
+  consoleConfig.map(o => {
+    var num = (o.match(/%c/g) || []).length;
+    if(/^http(s)?:\/\//.test(o)) {
+      console.log('%c     ', 'background: url(' + o + ') no-repeat left center;font-size: 180px;');
+      return;
+    }
+    if (num > 0) {
+      var logArguments = [];
+      for (var i = 0; i < num; i++) {
+        if (i % 2 === 0) {
+          logArguments.push(backgroundTextStyle);
+        } else {
+          logArguments.push(textStyle);
+        }
+      }
+      (_console = console).log.apply(_console, ['%c' + o, textStyle].concat(logArguments));
+      return;
+    }
+    console.log('%c' + o, textStyle);
+  });
+}(consoleConfig));</script><script type="text/javascript" src="/./js/main.js"></script>
+
+  <script src="//at.alicdn.com/t/font_159214_mvtxvg9me9.js"></script>
+</body>
+</html>

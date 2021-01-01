@@ -1,0 +1,482 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>邓子乐的札记</title>
+  
+  
+  <link href="https://dengzile.com/atom.xml" rel="self"/>
+  
+  <link href="https://dengzile.com/"/>
+  <updated>2020-11-08T02:13:05.563Z</updated>
+  <id>https://dengzile.com/</id>
+  
+  <author>
+    <name>邓子乐</name>
+    
+  </author>
+  
+  <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>在Uni-APP中使用RenderJs</title>
+    <link href="https://dengzile.com/2020/10/28/%E5%9C%A8uni-app%E4%B8%AD%E4%BD%BF%E7%94%A8renderjs/"/>
+    <id>https://dengzile.com/2020/10/28/%E5%9C%A8uni-app%E4%B8%AD%E4%BD%BF%E7%94%A8renderjs/</id>
+    <published>2020-10-27T18:29:57.000Z</published>
+    <updated>2020-11-08T02:13:05.563Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="1、前言"><a href="#1、前言" class="headerlink" title="1、前言"></a>1、前言</h2><p>RenderJs是UniApp最近推出运行在视图层的js。它比WXS更加强大。它只支持app-vue和h5。主要功能是用来支持一些需要操作DOM的JS插件，或者需要高性能canvas的工具。例如运行F2、echarts图表 等。但是官方文档比较简单，H5展现基本问题不大，如果要编译到App，则会出现问题。调试也麻烦，所以我写这篇文章补充一下一些常见问题，然后开始写一下教程。</p><p>①、RenderJs运行的层叫【视图层】，Uniapp原生Script叫【逻辑层】，千万不要搞混。</p><p>②、他们互相正常不能直接调用，逻辑层要调用视图层需要使用一个叫【watcher】，官方也只有一笔带过。</p><p>③、视图层不能直接使用逻辑层中data的数据，需要在Dom中绑定。</p><p>④、切记要注意要让【逻辑层】先执行，获取到数据后，通过watcher调用视图层绘制图表，因为我还没不清楚他们执行顺序，官方也没明确。</p><h2 id="2、RenderJs写法"><a href="#2、RenderJs写法" class="headerlink" title="2、RenderJs写法"></a>2、RenderJs写法</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;script module&#x3D;&quot;echarts&quot; lang&#x3D;&quot;renderjs&quot;&gt;&lt;&#x2F;script&gt;</span><br></pre></td></tr></table></figure><p>module是必须命名，以便可以在绑定数据时通过数据改变，触发【视图层】的函数。这个名字是随意的。</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;template&gt;</span><br><span class="line">&lt;view id&#x3D;&quot;echarts&quot;&gt;&lt;&#x2F;view&gt;</span><br><span class="line">&lt;&#x2F;template&gt;</span><br></pre></td></tr></table></figure><p>id记得要写上，以便在【视图层】使用 document.getElementById 获取到需要操作的页面。</p><p>在【视图层】，生命周期类似。我们添加一些代码进去。</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">&lt;script module&#x3D;&quot;echarts&quot; lang&#x3D;&quot;renderjs&quot;&gt;</span><br><span class="line">export default &#123;</span><br><span class="line">mounted() &#123;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;挂载后执行。</span><br><span class="line">&#125;,</span><br><span class="line">methods: </span><br><span class="line">initEcharts() &#123;</span><br><span class="line">myChart &#x3D; echarts.init(document.getElementById(&#39;echarts&#39;))</span><br><span class="line">&#x2F;&#x2F; 观测更新的数据在 view 层可以直接访问到</span><br><span class="line">myChart.setOption(this.option)</span><br><span class="line">&#125;,</span><br><span class="line">updateEcharts(newValue, oldValue, ownerInstance, instance) &#123;</span><br><span class="line">&#x2F;&#x2F; 监听 service 层数据变更</span><br><span class="line">myChart.setOption(newValue);</span><br><span class="line">alert(this.debugtxt)</span><br><span class="line"></span><br><span class="line">&#125;,</span><br><span class="line">onClick(event, ownerInstance) &#123;</span><br><span class="line">&#x2F;&#x2F; 调用 service 层的方法</span><br><span class="line">ownerInstance.callMethod(&#39;onViewClick&#39;, &#123;</span><br><span class="line">test: &#39;test&#39;</span><br><span class="line">&#125;)</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line">&lt;&#x2F;script&gt;</span><br></pre></td></tr></table></figure><p>代码都是官方文档的，但是他基本上没有详细说明为什么要这样做。</p><p>我们先要知道，【视图层】要获取数据必须在template中绑定，如果要从【逻辑层】调用【视图层】数据，也必须通过template绑定一个事件进行触发，！！不能直接调用！！，你在Html5中，可以实现的方法，到APP端会全部失效。这个非常致命。我们来解析一下template中代码的意思。</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;view @click&#x3D;&quot;echarts.onClick&quot; :prop&#x3D;&quot;option&quot; :change:prop&#x3D;&quot;echarts.updateEcharts&quot; id&#x3D;&quot;echarts&quot; class&#x3D;&quot;echarts&quot;    &gt;&lt;&#x2F;view&gt;</span><br></pre></td></tr></table></figure><p>@click 当view点击的时候，通过 【模块名.事件】触发【视图层】函数</p><p>:prop 其实这个名字改什么都可以， :变量名=”逻辑层数据” ，通过这个方法绑定你在逻辑层数据，以便可以方便【视图层】调用。</p><p>:change:prop 这个是从【逻辑层】调用【视图层】的一个重要地方。 :change:变量 通过观察在【逻辑层】中的数据，来触发【视图层】 updateEcharts 函数。在官方canvas的Demo中，用上了以下代码：</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&lt;canvas canvas-id&#x3D;&quot;canvas&quot; class&#x3D;&quot;canvas&quot; :start&#x3D;&quot;startStatus&quot; :change:start&#x3D;&quot;animate.start&quot;</span><br><span class="line">                   :data-width&#x3D;&quot;canvasWidth&quot; :data-height&#x3D;&quot;canvasWidth&quot;&gt;&lt;&#x2F;canvas&gt;</span><br></pre></td></tr></table></figure><p>官方通过改变startStatus状态，来实现从【逻辑层】调用【视图层】的函数。</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F;逻辑层代码，在198行</span><br><span class="line">             </span><br><span class="line">&#x2F;&#x2F; #ifdef APP-PLUS  H5</span><br><span class="line">   this.startStatus &#x3D; true</span><br><span class="line">&#x2F;&#x2F; #endif</span><br></pre></td></tr></table></figure><p>最后，从【视图层】调用【逻辑层】的函数，相对简单，即ownerInstance.callMethod 即可。</p><h2 id="3、参考文档"><a href="#3、参考文档" class="headerlink" title="3、参考文档"></a>3、参考文档</h2><p><a href="https://ext.dcloud.net.cn/plugin?id=1207">https://ext.dcloud.net.cn/plugin?id=1207</a> renderjs-echarts-demo</p><p><a href="https://uniapp.dcloud.net.cn/frame?id=renderjs">https://uniapp.dcloud.net.cn/frame?id=renderjs</a> 官方介绍</p><p>内置的 Hello uni-app 中 canvas.vue 有介绍如何使用高性能canvas及兼容小程序。</p><p><a href="https://blog.csdn.net/jones2000/article/details/106933985">https://blog.csdn.net/jones2000/article/details/106933985</a> HQChart使用教程63-uniapp使用renderjs+hqchart(h5)</p><h2 id="4、结尾"><a href="#4、结尾" class="headerlink" title="4、结尾"></a>4、结尾</h2><p>由于用了renderjs已经放弃了小程序端，在使用图表多应用下，也是唯一办法，原本使用uCharts,但是图表样式无法完全配合，只能另觅方法。希望F2能完整移植到uni-app。看看以后有没有办法吧，使用renderjs也是一个灵活的办法。</p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;h2 id=&quot;1、前言&quot;&gt;&lt;a href=&quot;#1、前言&quot; class=&quot;headerlink&quot; title=&quot;1、前言&quot;&gt;&lt;/a&gt;1、前言&lt;/h2&gt;&lt;p&gt;RenderJs是UniApp最近推出运行在视图层的js。它比WXS更加强大。它只支持app-vue和h5。主要功能是用来支</summary>
+      
+    
+    
+    
+    <category term="软件开发" scheme="https://dengzile.com/categories/%E8%BD%AF%E4%BB%B6%E5%BC%80%E5%8F%91/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>TIKTOK国际版免ROOT浏览、发表、点赞【2020年10月27日免拔卡实测】</title>
+    <link href="https://dengzile.com/2020/10/27/tiktok%E5%9B%BD%E9%99%85%E7%89%88%E5%85%8Droot%E6%B5%8F%E8%A7%88%E3%80%81%E5%8F%91%E8%A1%A8%E3%80%81%E7%82%B9%E8%B5%9E%E3%80%902020%E5%B9%B410%E6%9C%8827%E6%97%A5%E5%85%8D%E6%8B%94%E5%8D%A1%E5%AE%9E/"/>
+    <id>https://dengzile.com/2020/10/27/tiktok%E5%9B%BD%E9%99%85%E7%89%88%E5%85%8Droot%E6%B5%8F%E8%A7%88%E3%80%81%E5%8F%91%E8%A1%A8%E3%80%81%E7%82%B9%E8%B5%9E%E3%80%902020%E5%B9%B410%E6%9C%8827%E6%97%A5%E5%85%8D%E6%8B%94%E5%8D%A1%E5%AE%9E/</id>
+    <published>2020-10-27T05:36:27.000Z</published>
+    <updated>2020-11-08T02:13:05.561Z</updated>
+    
+    <content type="html"><![CDATA[<p>要免ROOT访问TIKTOK真的挺复杂，TK检测机制非常多，通常检测SIM厂商、SIM国际及SIM卡名称。我们需要准备几个软件或者邮箱</p><p>一、准备软件</p><p>①、能访问稳定访问网络。</p><p>②、太极阴或应用转生(<a href="https://www.taichi-app.com/#/index)%E3%80%82">https://www.taichi-app.com/#/index)。</a></p><p>③、在酷安下载应用变量并注册(<a href="https://www.coolapk.com/apk/com.sollyu.xposed.hook.model)%E3%80%82">https://www.coolapk.com/apk/com.sollyu.xposed.hook.model)。</a></p><p>④、要你命3000Xposed模块。(<a href="https://www.90pan.com/b2138344">https://www.90pan.com/b2138344</a>)</p><p>④、一个APK版TK（非XAPK版，XAPK版应用转生后无法登录）[<a href="https://www.90pan.com/b2140619/]%E3%80%82">https://www.90pan.com/b2140619\]。</a></p><p>⑤、一个谷歌账号。</p><p>二、使用安装TK后，转生成功</p><p>三、激活要你命3000及应用变量模块。</p><p>四、设置3000模块及应用变量中，SIM厂商、SIM国际及SIM卡名称</p><p><img src="https://dengzile.com/wp-content/uploads/2020/10/78805a221a988e7.png"></p><p>五、总结</p><p>①、原本仅需要用3000模块或应用变量模块即可，但是用了应用变量后，右上角不会显示COVID-19的Logo，必须配合3000模块设置同一个地区代码才会正常出现，并显示你所在区域。</p><p>②、如果仅用3000模块，可以在账号中看到仅会跳转到VN区（越南）。所以必须2个模块配合才能正常运作。</p><p>③、用Apkprue下载的TK，是XAPK包，转生后，无法直接登录，会一直报错。所以需要用APk版本。</p><p>六、附录一份应用变量中对应运营商代码</p><blockquote><p>{20201,    “Cosmote”,          “GR”}, </p><p>{20205,    “Vodafone GR”,      “GR”}, </p><p>{20210,    “TELESTET”,         “GR”}, </p><p>{20404,    “Vodafone NL”,      “NL”}, </p><p>{20408,    “KPN”,              “NL”}, </p><p>{20412,    “O2 - NL”,          “NL”}, </p><p>{20416,    “Ben”,              “NL”}, </p><p>{20420,    “dutchtone”,        “NL”}, </p><p>{20601,    “Proximus”,         “BE”}, </p><p>{20610,    “Mobistar”,         “BE”}, </p><p>{20620,    “Orange”,           “BE”}, </p><p>{20801,    “Orange”,           “FR”}, </p><p>{20810,    “SFR”,              “FR”}, </p><p>{20820,    “BOUYGTEL”,         “FR”}, </p><p>{21303,    “Mobiland”,         “AD”}, </p><p>{21401,    “Vodafone E”,       “ES”}, </p><p>{21402,    “MoviStar”,         “ES”}, </p><p>{21403,    “AMENA”,            “ES”}, </p><p>{21404,    “Xfera”,            “ES”}, </p><p>{21407,    “MoviStar”,         “ES”}, </p><p>{21601,    “Pannon GSM”,       “HU”}, </p><p>{21630,    “Westel”,           “HU”}, </p><p>{21670,    “Vodafone”,         “HU”}, </p><p>{21803,    “ERONET”,           “BA”}, </p><p>{21805,    “Mobilna Srpska”,   “BA”}, </p><p>{21890,    “GSM BiH”,          “BA”}, </p><p>{21901,    “CRONET”,           “HR”}, </p><p>{21910,    “VIP”,              “HR”}, </p><p>{22001,    “MOBTEL”,           “YU”}, </p><p>{22002,    “ProMonte”,         “YU”}, </p><p>{22003,    “Telekom Srbija”,   “YU”}, </p><p>{22004,    “MONET”,            “YU”}, </p><p>{22201,    “TIM”,              “IT”}, </p><p>{22210,    “Vodafone IT”,      “IT”}, </p><p>{22288,    “WIND”,             “IT”}, </p><p>{22298,    “Blu SpA”,          “IT”}, </p><p>{22601,    “CONNEX”,           “RO”}, </p><p>{22603,    “Cosmorom”,         “RO”}, </p><p>{22610,    “dialog”,           “RO”}, </p><p>{22801,    “Swiss GSM”,        “CH”}, </p><p>{22802,    “sunrise”,          “CH”}, </p><p>{22803,    “Orange”,           “CH”}, </p><p>{23001,    “PAEGAS”,           “CZ”}, </p><p>{23002,    “EUROTEL”,          “CZ”}, </p><p>{23003,    “OSKAR”,            “CZ”}, </p><p>{23101,    “GLOBTEL”,          “SK”}, </p><p>{23102,    “EUROTEL”,          “SK”}, </p><p>{23201,    “A1”,               “AT”}, </p><p>{23203,    “T-Mobile”,         “AT”}, </p><p>{23205,    “ONE”,              “AT”}, </p><p>{23207,    “tele.ring”,        “AT”}, </p><p>{23410,    “O2 - UK”,          “GB”}, </p><p>{23415,    “Vodafone”,         “GB”}, </p><p>{23430,    “T-Mobile UK”,      “GB”}, </p><p>{23431,    “T-Mobile UK”,      “GB”}, </p><p>{23432,    “T-Mobile UK”,      “GB”}, </p><p>{23433,    “Orange”,           “GB”}, </p><p>{23450,    “JT GSM”,           “GB”}, </p><p>{23455,    “GUERNSEY TEL”,     “GB”}, </p><p>{23458,    “MANX”,             “GB”}, </p><p>{23801,    “TDK-MOBIL”,        “DK”}, </p><p>{23802,    “SONOFON”,          “DK”}, </p><p>{23820,    “Telia”,            “DK”}, </p><p>{23830,    “Orange”,           “DK”}, </p><p>{24001,    “Telia S”,          “SE”}, </p><p>{24007,    “IQ”,               “SE”}, </p><p>{24008,    “Vodafone”,         “SE”}, </p><p>{24201,    “TELENOR”,          “NO”}, </p><p>{24202,    “NetCom”,           “NO”}, </p><p>{24403,    “Telia”,            “FI”}, </p><p>{24405,    “RADIOLINJA”,       “FI”}, </p><p>{24409,    “FINNET”,           “FI”}, </p><p>{24412,    “2G”,               “FI”}, </p><p>{24414,    “AMT”,              “FI”}, </p><p>{24491,    “SONERA”,           “FI”}, </p><p>{24601,    “OMNITEL”,          “LT”}, </p><p>{24602,    “Bite GSM”,         “LT”}, </p><p>{24603,    “TELE2”,            “LT”}, </p><p>{24701,    “LMT GSM”,          “LV”}, </p><p>{24702,    “BALTCOM”,          “LV”}, </p><p>{24801,    “EMT GSM”,          “EE”}, </p><p>{24802,    “RLE”,              “EE”}, </p><p>{24803,    “Q GSM”,            “EE”}, </p><p>{25001,    “MTS”,              “RU”}, </p><p>{25002,    “NorthWest GSM”,    “RU”}, </p><p>{25003,    “NCC”,              “RU”}, </p><p>{25005,    “SCS”,              “RU”}, </p><p>{25007,    “SMARTS”,           “RU”}, </p><p>{25010,    “DTC”,              “RU”}, </p><p>{25011,    “Orensot”,          “RU”}, </p><p>{25012,    “Far East”,         “RU”}, </p><p>{25013,    “Kuban GSM”,        “RU”}, </p><p>{25016,    “NTC”,              “RU”}, </p><p>{25017,    “Ermak RMS”,        “RU”}, </p><p>{25028,    “EXTEL”,            “RU”}, </p><p>{25039,    “Uraltel”,          “RU”}, </p><p>{25044,    “NC-GSM”,           “RU”}, </p><p>{25091,    “Sonic Duo”,        “RU”}, </p><p>{25092,    “Primtel”,          “RU”}, </p><p>{25093,    “JSC Telecom XXI”,  “RU”}, </p><p>{25099,    “Bee Line”,         “RU”}, </p><p>{25501,    “UMC”,              “UA”}, </p><p>{25502,    “WellCOM”,          “UA”}, </p><p>{25503,    “Kyivstar”,         “UA”}, </p><p>{25505,    “Golden Telecom”,   “UA”}, </p><p>{25701,    “VELCOM”,           “BY”}, </p><p>{25901,    “VOXTEL”,           “MD”}, </p><p>{25902,    “MOLDCELL”,         “MD”}, </p><p>{26001,    “Plus GSM”,         “PL”}, </p><p>{26002,    “Era GSM”,          “PL”}, </p><p>{26003,    “IDEA”,             “PL”}, </p><p>{26201,    “T-Mobile”,         “DE”}, </p><p>{26202,    “Vodafone D2”,      “DE”}, </p><p>{26203,    “E-Plus”,           “DE”}, </p><p>{26207,    “O2 - DE”,          “DE”}, </p><p>{26213,    “Mobilcom”,         “DE”}, </p><p>{26601,    “GIBTEL”,           “GI”}, </p><p>{26801,    “Vodafone”,         “PT”}, </p><p>{26803,    “OPTIMUS”,          “PT”}, </p><p>{26806,    “TMN”,              “PT”}, </p><p>{27001,    “LUXGSM”,           “LU”}, </p><p>{27077,    “TANGO”,            “LU”}, </p><p>{27201,    “Vodafone IRL”,     “IE”}, </p><p>{27202,    “O2 - IRL”,         “IE”}, </p><p>{27203,    “METEOR”,           “IE”}, </p><p>{27401,    “SIMINN”,           “IS”}, </p><p>{27402,    “TAL”,              “IS”}, </p><p>{27404,    “Viking”,           “IS”}, </p><p>{27601,    “AMC”,              “AL”}, </p><p>{27602,    “Vodafone”,         “AL”}, </p><p>{27801,    “Vodafone Malta”,   “MT”}, </p><p>{27821,    “go mobile”,        “MT”}, </p><p>{28001,    “CYTAGSM”,          “CY”}, </p><p>{28201,    “GEOCELL”,          “GE”}, </p><p>{28202,    “Magti GSM”,        “GE”}, </p><p>{28203,    “GEO 03”,           “GE”}, </p><p>{28301,    “ARMGSM”,           “AM”}, </p><p>{28401,    “M-TEL GSM”,        “BG”}, </p><p>{28601,    “TURKCELL”,         “TR”}, </p><p>{28602,    “TELSIM”,           “TR”}, </p><p>{28603,    “ARIA”,             “TR”}, </p><p>{28604,    “AYCELL”,           “TR”}, </p><p>{28801,    “FT GSM”,           “FO”}, </p><p>{29001,    “TELE Greenland”,   “GR”}, </p><p>{29340,    “SI.MOBIL”,         “SI”}, </p><p>{29341,    “MOBITEL”,          “SI”}, </p><p>{29401,    “MOBIMAK”,          “MK”}, </p><p>{29501,    “TELECOM”,          “LI”}, </p><p>{29502,    “MONTEL”,           “LI”}, </p><p>{29505,    “FL1”,              “LI”}, </p><p>{29577,    “LI TANGO”,         “LI”}, </p><p>{30237,    “Microcell”,        “CA”}, </p><p>{30272,    “Rogers AT&amp;T”,      “CA”}, </p><p>{31001,    “Cellnet”,          “US”}, </p><p>{31011,    “Wireless 2000”,    “US”}, </p><p>{31015,    “Cingular”,         “US”}, </p><p>{31016,    “T-Mobile”,         “US”}, </p><p>{31017,    “Cingular”,         “US”}, </p><p>{31018,    “Cingular”,         “US”}, </p><p>{31020,    “T-Mobile”,         “US”}, </p><p>{31021,    “T-Mobile”,         “US”}, </p><p>{31022,    “T-Mobile”,         “US”}, </p><p>{31023,    “T-Mobile”,         “US”}, </p><p>{31024,    “T-Mobile”,         “US”}, </p><p>{31025,    “T-Mobile”,         “US”}, </p><p>{31026,    “T-Mobile”,         “US”}, </p><p>{31027,    “T-Mobile”,         “US”}, </p><p>{31031,    “T-Mobile”,         “US”}, </p><p>{31034,    “WestLink”,         “US”}, </p><p>{31035,    “Carolina”,         “US”}, </p><p>{31038,    “AT&amp;T Wireless”,    “US”}, </p><p>{31041,    “Cingular”,         “US”}, </p><p>{31046,    “TMP Corp”,         “US”}, </p><p>{31058,    “T-Mobile”,         “US”}, </p><p>{31061,    “Epic Touch”,       “US”}, </p><p>{31063,    “AmeriLink”,        “US”}, </p><p>{31064,    “Einstein PCS”,     “US”}, </p><p>{31066,    “T-Mobile”,         “US”}, </p><p>{31067,    “Wireless 2000”,    “US”}, </p><p>{31068,    “NPI Wireless”,     “US”}, </p><p>{31069,    “Conestoga”,        “US”}, </p><p>{31074,    “Telemetrix”,       “US”}, </p><p>{31076,    “PTSI”,             “US”}, </p><p>{31077,    “Iowa Wireless”,    “US”}, </p><p>{31078,    “Airlink PCS”,      “US”}, </p><p>{31079,    “PinPoint”,         “US”}, </p><p>{31080,    “T-Mobile”,         “US”}, </p><p>{31098,    “AWS”,              “US”}, </p><p>{31114,    “Sprocket”,         “UNKNOWN_COUNTRY_CODE”}, </p><p>{31601,    “Nextel”,           “UNKNOWN_COUNTRY_CODE”}, </p><p>{33805,    “Digicel”,          “JM”}, </p><p>{34001,    “Orange “,          “FW”}, </p><p>{34020,    “Bouygues”,         “FW”}, </p><p>{34430,    “APUA PCS”,         “AG”}, </p><p>{35001,    “Telecom”,          “BM”}, </p><p>{36251,    “Telcell GSM”,      “AN”}, </p><p>{36801,    “C_Com”,            “CU”}, </p><p>{37001,    “Orange”,           “DO”}, </p><p>{40001,    “AZERCELL GSM”,     “AZ”}, </p><p>{40002,    “BAKCELL GSM 2000”, “AZ”}, </p><p>{40101,    “K-MOBILE”,         “KZ”}, </p><p>{40102,    “K’CELL”,           “KZ”}, </p><p>{40401,    “Hutch”,            “IN”}, </p><p>{40402,    “Airtel”,           “IN”}, </p><p>{40403,    “Airtel”,           “IN”}, </p><p>{40404,    “IDEA”,             “IN”}, </p><p>{40405,    “Hutch”,            “IN”}, </p><p>{40407,    “IDEA”,             “IN”}, </p><p>{40409,    “Reliance”,         “IN”}, </p><p>{40410,    “Airtel”,           “IN”}, </p><p>{40411,    “Hutch”,            “IN”}, </p><p>{40412,    “IDEA”,             “IN”}, </p><p>{40413,    “Hutch”,            “IN”}, </p><p>{40414,    “Spice”,            “IN”}, </p><p>{40415,    “Hutch”,            “IN”}, </p><p>{40416,    “Airtel”,           “IN”}, </p><p>{40418,    “Reliance”,         “IN”}, </p><p>{40419,    “IDEA”,             “IN”}, </p><p>{40420,    “Hutch”,            “IN”}, </p><p>{40421,    “BPL Mobile”,       “IN”}, </p><p>{40422,    “IDEA”,             “IN”}, </p><p>{40424,    “IDEA”,             “IN”}, </p><p>{40427,    “Hutch”,            “IN”}, </p><p>{40429,    “Aircel”,           “IN”}, </p><p>{40430,    “Hutch”,            “IN”}, </p><p>{40431,    “Airtel”,           “IN”}, </p><p>{40434,    “Cellone”,          “IN”}, </p><p>{40436,    “Reliance”,         “IN”}, </p><p>{40437,    “Aircel”,           “IN”}, </p><p>{40438,    “Cellone”,          “IN”}, </p><p>{40440,    “Airtel”,           “IN”}, </p><p>{40441,    “RPG”,              “IN”}, </p><p>{40443,    “Hutch”,            “IN”}, </p><p>{40444,    “Spice”,            “IN”}, </p><p>{40445,    “Airtel”,           “IN”}, </p><p>{40446,    “Hutch”,            “IN”}, </p><p>{40449,    “Airtel”,           “IN”}, </p><p>{40450,    “Reliance”,         “IN”}, </p><p>{40451,    “Cellone”,          “IN”}, </p><p>{40452,    “Reliance”,         “IN”}, </p><p>{40453,    “Cellone”,          “IN”}, </p><p>{40454,    “Cellone”,          “IN”}, </p><p>{40455,    “Cellone”,          “IN”}, </p><p>{40456,    “IDEA”,             “IN”}, </p><p>{40457,    “Cellone”,          “IN”}, </p><p>{40458,    “Cellone”,          “IN”}, </p><p>{40459,    “Cellone”,          “IN”}, </p><p>{40460,    “Hutch”,            “IN”}, </p><p>{40462,    “Cellone”,          “IN”}, </p><p>{40464,    “Cellone”,          “IN”}, </p><p>{40466,    “Cellone”,          “IN”}, </p><p>{40467,    “Reliance”,         “IN”}, </p><p>{40468,    “DOLPHIN”,          “IN”}, </p><p>{40469,    “MTNL”,             “IN”}, </p><p>{40470,    “Airtel”,           “IN”}, </p><p>{40471,    “Cellone”,          “IN”}, </p><p>{40472,    “Cellone”,          “IN”}, </p><p>{40473,    “Cellone”,          “IN”}, </p><p>{40474,    “Cellone”,          “IN”}, </p><p>{40475,    “Cellone”,          “IN”}, </p><p>{40476,    “Cellone”,          “IN”}, </p><p>{40477,    “Cellone”,          “IN”}, </p><p>{40478,    “IDEA”,             “IN”}, </p><p>{40479,    “Cellone”,          “IN”}, </p><p>{40480,    “Cellone”,          “IN”}, </p><p>{40481,    “Cellone”,          “IN”}, </p><p>{40482,    “IDEA”,             “IN”}, </p><p>{40483,    “Reliance”,         “IN”}, </p><p>{40484,    “Hutch”,            “IN”}, </p><p>{40485,    “Reliance”,         “IN”}, </p><p>{40486,    “Hutch”,            “IN”}, </p><p>{40487,    “IDEA”,             “IN”}, </p><p>{40488,    “Hutch”,            “IN”}, </p><p>{40489,    “IDEA”,             “IN”}, </p><p>{40490,    “Airtel”,           “IN”}, </p><p>{40492,    “Airtel”,           “IN”}, </p><p>{40493,    “Airtel”,           “IN”}, </p><p>{40494,    “Airtel”,           “IN”}, </p><p>{40495,    “Airtel”,           “IN”}, </p><p>{40496,    “Airtel”,           “IN”}, </p><p>{40497,    “Airtel”,           “IN”}, </p><p>{40498,    “Airtel”,           “IN”}, </p><p>{40551,    “Airtel”,           “IN”}, </p><p>{40552,    “Airtel”,           “IN”}, </p><p>{40553,    “Airtel”,           “IN”}, </p><p>{40554,    “Airtel”,           “IN”}, </p><p>{40555,    “Airtel”,           “IN”}, </p><p>{40556,    “Airtel”,           “IN”}, </p><p>{40566,    “Hutch”,            “IN”}, </p><p>{40567,    “Hutch”,            “IN” }, </p><p>{41001,    “Mobilink”,         “PK”}, </p><p>{41302,    “DIALOG”,           “LK”}, </p><p>{41303,    “CELLTEL”,          “LK”}, </p><p>{41401,    “MM 900”,           “MM”}, </p><p>{41501,    “Cellis”,           “LB”}, </p><p>{41503,    “LibanCell”,        “LB”}, </p><p>{41601,    “Fastlink”,         “JO”}, </p><p>{41677,    “MobileCom”,        “JO”}, </p><p>{41702,    “Spacetel”,         “SY”}, </p><p>{41709,    “MOBILE SYRIA”,     “SY”}, </p><p>{41902,    “MTCNet”,           “KW”}, </p><p>{41903,    “WATANIYA”,         “KW”}, </p><p>{42001,    “Al-Jawal”,         “SA”}, </p><p>{42007,    “EAE”,              “SA”}, </p><p>{42102,    “Spacetel”,         “YE”}, </p><p>{42202,    “OMAN MOBILE”,      “OM”}, </p><p>{42402,    “ETISALAT”,         “AE”}, </p><p>{42501,    “Orange”,           “IL”}, </p><p>{42505,    “JAWWAL”,           “IL”}, </p><p>{42601,    “MOBILE PLUS”,      “BH”}, </p><p>{42701,    “QATARNET”,         “QA”}, </p><p>{42899,    “MobiCom”,          “MN”}, </p><p>{42901,    “NTC”,              “NP”}, </p><p>{43211,    “TCI”,              “IR”}, </p><p>{43214,    “KISH”,             “IR”}, </p><p>{43401,    “Buztel”,           “UZ”}, </p><p>{43402,    “Uzmacom”,          “UZ”}, </p><p>{43404,    “UZB DAEWOO-GSM”,   “UZ”}, </p><p>{43405,    “Coscom”,           “UZ”}, </p><p>{43701,    “BITEL”,            “KG”}, </p><p>{43801,    “BCTI”,             “TM”}, </p><p>{45201,    “MOBIFONE”,         “VN”}, </p><p>{45202,    “VINAFONE”,         “VN”}, </p><p>{45400,    “CSL”,              “HK”}, </p><p>{45401,    “NEW WORLD”,        “HK”}, </p><p>{45402,    “CSL”,              “HK”}, </p><p>{45404,    “Orange”,           “HK”}, </p><p>{45406,    “SMC”,              “HK”}, </p><p>{45410,    “NEW WORLD”,        “HK”}, </p><p>{45412,    “PEOPLES”,          “HK”}, </p><p>{45416,    “SUNDAY”,           “HK”}, </p><p>{45418,    “HK TELECOM”,       “HK”}, </p><p>{45500,    “SmarTone”,         “UNKNOWN_COUNTRY_CODE”}, </p><p>{45501,    “CTMGSM”,           “UNKNOWN_COUNTRY_CODE”}, </p><p>{45503,    “HT Macau”,         “UNKNOWN_COUNTRY_CODE”}, </p><p>{45601,    “MobiTel”,          “KH”}, </p><p>{45602,    “SAMART-GSM”,       “KH”}, </p><p>{45701,    “LAO GSM”,          “LA”}, </p><p>{46000,    “CHINA MOBILE”,     “CN”}, </p><p>{46001,    “CHN-CUGSM”,        “CN”}, </p><p>{46002,    “CHINA MOBILE”,     “CN”}, </p><p>{46601,    “Far EasTone”,      “TW”}, </p><p>{46606,    “TUNTEX”,           “TW”}, </p><p>{46668,    “ACeS”,             “TW”}, </p><p>{46688,    “KGT”,              “TW”}, </p><p>{46692,    “Chunghwa”,         “TW”}, </p><p>{46693,    “MobiTai”,          “TW”}, </p><p>{46697,    “TWN GSM”,          “TW”}, </p><p>{46699,    “TransAsia”,        “TW”}, </p><p>{47001,    “GrameemPhone”,     “BD”}, </p><p>{47002,    “AKTEL”,            “BD”}, </p><p>{47003,    “ShebaWorld”,       “BD”}, </p><p>{47019,    “Mobile 2000”,      “BD”}, </p><p>{47201,    “DHIMOBILE”,        “MV”}, </p><p>{50212,    “Maxis Mobile”,     “MY”}, </p><p>{50213,    “TM Touch”,         “MY”}, </p><p>{50216,    “DiGi”,             “MY”}, </p><p>{50217,    “ADAM”,             “MY”}, </p><p>{50219,    “CELCOM”,           “MY”}, </p><p>{50501,    “MobileNet”,        “AU”}, </p><p>{50502,    “OPTUS”,            “AU”}, </p><p>{50503,    “Vodafone”,         “AU”}, </p><p>{50508,    “One.Tel”,          “AU”}, </p><p>{51000,    “ACeS”,             “ID”}, </p><p>{51001,    “SATELINDOCEL”,     “ID”}, </p><p>{51008,    “LIPPO TEL”,        “ID”}, </p><p>{51010,    “TELKOMSEL”,        “ID”}, </p><p>{51011,    “GSM-XL”,           “ID”}, </p><p>{51021,    “INDOSAT”,          “ID”}, </p><p>{51501,    “ISLACOM”,          “PH”}, </p><p>{51502,    “Globe”,            “PH”}, </p><p>{51503,    “SMART”,            “PH”}, </p><p>{51505,    “Digitel”,          “PH”}, </p><p>{51511,    “ACeS”,             “PH”}, </p><p>{52001,    “AIS GSM”,          “TH”}, </p><p>{52015,    “ACT Mobile”,       “TH”}, </p><p>{52018,    “WP-1800”,          “TH”}, </p><p>{52020,    “ACeS”,             “TH”}, </p><p>{52023,    “HELLO”,            “TH”}, </p><p>{52099,    “Orange”,           “TH”}, </p><p>{52501,    “ST-GSM-SGP”,       “SG”}, </p><p>{52502,    “ST-GSM1800-SGP”,   “SG”}, </p><p>{52503,    “M1-GSM-SGP”,       “SG”}, </p><p>{52504,    “SGP-M1-3GSM”,      “SG”}, </p><p>{52505,    “STARHUB-SGP”,      “SG”}, </p><p>{52811,    “BRU TSTCom”,       “BN”}, </p><p>{53001,    “Vodafone”,         “NZ”}, </p><p>{53901,    “Tonga Comm.”,      “TO”}, </p><p>{54100,    “ACeS”,             “VU”}, </p><p>{54101,    “SMILE”,            “VU”}, </p><p>{54201,    “Vodafone”,         “FJ”}, </p><p>{54411,    “Blue Sky”,         “AS”}, </p><p>{54601,    “MOBILIS”,          “NC”}, </p><p>{54720,    “VINI”,             “PF”}, </p><p>{55001,    “FSM”,              “FM”}, </p><p>{60201,    “MobiNiL”,          “EG”}, </p><p>{60202,    “CLICK GSM”,        “EG”}, </p><p>{60301,    “AMN”,              “DZ”}, </p><p>{60400,    “Meditel”,          “MA”}, </p><p>{60401,    “IAM”,              “MA”}, </p><p>{60502,    “TUNICELL”,         “TN”}, </p><p>{60801,    “ALIZE”,            “SN”}, </p><p>{60802,    “SENTEL”,           “SN”}, </p><p>{61001,    “MALITEL”,          “ML”}, </p><p>{61101,    “MOBILIS”,          “GN”}, </p><p>{61102,    “LAGUI”,            “GN”}, </p><p>{61201,    “CORA”,             “CI”}, </p><p>{61203,    “Ivoiris”,          “CI”}, </p><p>{61205,    “TELECEL”,          “CI”}, </p><p>{61302,    “CELTEL”,           “BF”}, </p><p>{61402,    “CELTEL”,           “NE”}, </p><p>{61501,    “TOGOCEL”,          “TG”}, </p><p>{61601,    “LIBERCOM”,         “BJ”}, </p><p>{61602,    “Telecel Benin”,    “BJ”}, </p><p>{61603,    “BENINCELL”,        “BJ”}, </p><p>{61701,    “CELLPLUS”,         “MU”}, </p><p>{61710,    “EMTEL”,            “MU”}, </p><p>{61801,    “Omega”,            “LR”}, </p><p>{62001,    “SPACEFON”,         “GH”}, </p><p>{62002,    “ONEtouch”,         “GH”}, </p><p>{62003,    “MOBITEL”,          “GH”}, </p><p>{62100,    “MTN”,              “NG”}, </p><p>{62120,    “ECONET”,           “NG”}, </p><p>{62130,    “MTN”,              “NG”}, </p><p>{62140,    “NITEL GSM”,        “NG”}, </p><p>{62201,    “CELTEL”,           “TD”}, </p><p>{62202,    “LIBERTIS”,         “TD”}, </p><p>{62401,    “MTN-CAM”,          “CM”}, </p><p>{62402,    “MOBILIS”,          “CM”}, </p><p>{62501,    “CPV MOVEL”,        “CV”}, </p><p>{62801,    “LIBERTIS”,         “GA”}, </p><p>{62802,    “GO Celtel”,        “GA”}, </p><p>{62803,    “CELTEL”,           “GA”}, </p><p>{62901,    “CELTEL”,           “CG”}, </p><p>{62910,    “LIBERTIS”,         “CG”}, </p><p>{63001,    “CELLNET”,          “CD”}, </p><p>{63002,    “CELTEL”,           “CD”}, </p><p>{63004,    “CELLCO”,           “CD”}, </p><p>{63089,    “OASIS”,            “CD”}, </p><p>{63301,    “SEYCEL”,           “SC”}, </p><p>{63310,    “AIRTEL”,           “SC”}, </p><p>{63401,    “MobiTel”,          “MZ”}, </p><p>{63510,    “Rwandacell”,       “RW”}, </p><p>{63601,    “ETMTN”,            “ET”}, </p><p>{63701,    “BARAKAAT”,         “SO”}, </p><p>{63902,    “Safaricom”,        “KE”}, </p><p>{63903,    “KENCELL”,          “KE”}, </p><p>{64001,    “TRITEL”,           “TZ”}, </p><p>{64002,    “MobiTel”,          “TZ”}, </p><p>{64003,    “ZANTEL”,           “TZ”}, </p><p>{64004,    “Vodacom”,          “TZ”}, </p><p>{64005,    “CELTEL”,           “TZ”}, </p><p>{64101,    “CelTel”,           “UG”}, </p><p>{64110,    “MTN-UGANDA”,       “UG”}, </p><p>{64111,    “UTL TELECEL”,      “UG”}, </p><p>{64201,    “Spacetel”,         “BI”}, </p><p>{64202,    “SAFARIS”,          “BI”}, </p><p>{64301,    “mCel”,             “UNKNOWN_COUNTRY_CODE”}, </p><p>{64501,    “ZAMCELL”,          “UNKNOWN_COUNTRY_CODE” }, </p><p>{64502,    “TELECEL”,          “UNKNOWN_COUNTRY_CODE”}, </p><p>{64601,    “Madacom”,          “MG”}, </p><p>{64602,    “ANTARIS”,          “MG”}, </p><p>{64700,    “Orange Reunion”,   “RE”}, </p><p>{64710,    “SFR Reunion”,      “RE”}, </p><p>{64801,    “NET*ONE”,          “ZW”}, </p><p>{64803,    “TELECEL”,          “ZW”}, </p><p>{64804,    “ECONET”,           “ZW”}, </p><p>{64901,    “MTC”,              “NA”}, </p><p>{65001,    “CALLPOINT 90”,     “MW”}, </p><p>{65010,    “CelTel”,           “MW”}, </p><p>{65101,    “Vodacom”,          “LS”}, </p><p>{65201,    “MASCOM”,           “BW”}, </p><p>{65202,    “VISTA”,            “BW”}, </p><p>{65310,    “SwaziMTN”,         “SZ”}, </p><p>{65501,    “Vodacom”,          “ZA”}, </p><p>{65507,    “Cell C (Pty) Ltd”, “ZA”}, </p><p>{65510,    “MTN”,              “ZA”}, </p><p>{70601,    “PERSONAL”,         “SV”}, </p><p>{70602,    “DIGICEL”,          “SV”}, </p><p>{71610,    “TIM”,              “PE”}, </p><p>{72207,    “UNIFON”,           “AR”}, </p><p>{72234,    “Telecom Personal”, “AR”}, </p><p>{72235,    “PORT-HABLE”,       “AR”}, </p><p>{72402,    “TIM BRASIL”,       “BR”}, </p><p>{72403,    “TIM BRASIL”,       “BR”}, </p><p>{72404,    “TIM BRASIL”,       “BR”}, </p><p>{72405,    “Claro”,            “BR”}, </p><p>{72416,    “BrTCel”,           “BR”}, </p><p>{73001,    “ENTEL PCS”,        “CL”}, </p><p>{73010,    “ENTEL PCS”,        “CL”}, </p><p>{73401,    “INFONET”,          “VE”}, </p><p>{73402,    “DIGITEL”,          “VE”}, </p><p>{73601,    “NUEVATEL”,         “BO”}, </p><p>{73602,    “ENTEL”,            “BO”}, </p><p>{74401,    “VOX”,              “PY”}, </p><p>{74402,    “PY 02”,            “PY”}, </p><p>{74601,    “ICMS”,             “SR”}, </p><p>{90105,    “Thuraya”,          “UNKNOWN_COUNTRY_CODE”},</p></blockquote>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;要免ROOT访问TIKTOK真的挺复杂，TK检测机制非常多，通常检测SIM厂商、SIM国际及SIM卡名称。我们需要准备几个软件或者邮箱&lt;/p&gt;
+&lt;p&gt;一、准备软件&lt;/p&gt;
+&lt;p&gt;①、能访问稳定访问网络。&lt;/p&gt;
+&lt;p&gt;②、太极阴或应用转生(&lt;a href=&quot;https://</summary>
+      
+    
+    
+    
+    <category term="软件经验" scheme="https://dengzile.com/categories/%E8%BD%AF%E4%BB%B6%E7%BB%8F%E9%AA%8C/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>常用药记录</title>
+    <link href="https://dengzile.com/2020/10/12/%E5%B8%B8%E7%94%A8%E8%8D%AF%E8%AE%B0%E5%BD%95/"/>
+    <id>https://dengzile.com/2020/10/12/%E5%B8%B8%E7%94%A8%E8%8D%AF%E8%AE%B0%E5%BD%95/</id>
+    <published>2020-10-12T09:09:59.000Z</published>
+    <updated>2020-11-08T02:13:05.559Z</updated>
+    
+    <content type="html"><![CDATA[<p>💊药名</p><p>备注</p><p>布洛芬缓释胶囊<br>布洛芬混悬液<br>布洛芬</p><p>常用止痛、消炎药。混悬液通常用于小朋友。<br>大人通常用缓释胶囊，如果只是布洛芬非常便宜。</p><p>必理通<br>（对乙酰氨基酚片）</p><p>我比较喜欢港版，秒解着凉头疼</p><p>新康泰克®氨麻美敏片</p><p>原本是日夜百服宁夜片，通常我发烧的时候吃。能加快入睡，缓解发烧。<br>这个东西网上没卖，要登记身份证</p><p>氨酚双氢可待因片</p><p>发烧的时候医生开过，痛风的时候也开过？</p><p>克座隐酮凝胶</p><p>抑制皮脂腺分泌及痤疮杆菌生长。用于黑头、白头粉刺。对痘痘效果不错</p><p>维A酸乳膏</p><p>针对粉刺，感觉效果不太明显。</p><p>维生素B6软膏</p><p>用于酒渣鼻、脂溢性湿疹、皱皮症</p><p>红霉素眼膏</p><p>便宜，但是激素</p><p>蒙脱石混悬液</p><p>止泻药，相对安全</p><p>喇叭牌 正露丸</p><p>肚子疼肠胃不舒服通常我就吃它</p><p>开瑞坦（氯雷他定片）</p><p>过敏体质常备</p><p>盐酸萘甲唑啉滴鼻液</p><p>秒解鼻塞，不能常用</p><p>甘和茶</p><p>对于中暑头疼发烧常备。竟然是处方药。多多大概15块</p><p>众生丸(众生)</p><p>上火吃一下，也不错。</p><p>洛索洛芬钠贴</p><p>对于疼痛部位可以缓解，比较贵</p><p>非布司他片</p><p>多多现在23元一盒，降尿酸💊</p><p>醋酸波尼松片</p><p>处方药💊，便宜，能快速针对通风疼痛，但是没什么事不建议吃。</p><p>双氯芬酸钠肠溶片<br>双氯芬酸钠缓释片</p><p>曾经开过治疗痛风发作时的疼痛，价格也便宜。<br>某些人对他效果不太有反应，有一些人吃了马上好。</p><p>塞来昔布胶囊</p><p>据说治疗痛风痛症更好，但是副作用好像更大。<br>如果非严重不用吃。多多约25块/盒</p><p>奥利司他胶囊</p><p>能阻止油脂吸收，大餐后一颗，能不让自己增肥。</p><p>左旋肉碱</p><p>能促进运动时脂肪消耗。</p><p>盐酸纳洛酮舌下片</p><p>针对一些喝酒乱说话的人。让他能神经清醒。但是不解酒。</p><p>盐酸达泊西汀片</p><p>张某人说效果很好，有治疗作用，未试过。处方药💊</p><p>枸橼酸西地那非片</p><p>张某人说效果很好。处方药💊</p><p>曲安奈德益康唑乳膏</p><p>针对👂真菌感染用过。使用后会有点痒。</p><p>瑞巴派特片</p><p>针对胃酸倒流</p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;💊药名&lt;/p&gt;
+&lt;p&gt;备注&lt;/p&gt;
+&lt;p&gt;布洛芬缓释胶囊&lt;br&gt;布洛芬混悬液&lt;br&gt;布洛芬&lt;/p&gt;
+&lt;p&gt;常用止痛、消炎药。混悬液通常用于小朋友。&lt;br&gt;大人通常用缓释胶囊，如果只是布洛芬非常便宜。&lt;/p&gt;
+&lt;p&gt;必理通&lt;br&gt;（对乙酰氨基酚片）&lt;/p&gt;
+&lt;p&gt;我比较喜欢</summary>
+      
+    
+    
+    
+    <category term="杂谈" scheme="https://dengzile.com/categories/%E6%9D%82%E8%B0%88/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>JavaScript转C#的一些函数摘要</title>
+    <link href="https://dengzile.com/2020/09/28/javascript%E8%BD%ACc%E7%9A%84%E4%B8%80%E4%BA%9B%E5%87%BD%E6%95%B0%E6%91%98%E8%A6%81/"/>
+    <id>https://dengzile.com/2020/09/28/javascript%E8%BD%ACc%E7%9A%84%E4%B8%80%E4%BA%9B%E5%87%BD%E6%95%B0%E6%91%98%E8%A6%81/</id>
+    <published>2020-09-28T05:06:45.000Z</published>
+    <updated>2020-11-08T02:13:05.557Z</updated>
+    
+    <content type="html"><![CDATA[<p>1、str.charCodeAt(i)</p><p>C# 中应使用：</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">(int)str[i]</span><br></pre></td></tr></table></figure><p>2、String.fromCharCode(t)</p><p>C# 中应使用：</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">(char)(t)</span><br></pre></td></tr></table></figure><p>3、var x = [];x.push(i)</p><p>C#应该使用：</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">List x &#x3D; new List();</span><br><span class="line">x.Add(i);</span><br><span class="line">x.ToArray();</span><br></pre></td></tr></table></figure><p>4、str.charAt(i)</p><p>C#中应该使用</p><p>str.Substring(i,1);</p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;1、str.charCodeAt(i)&lt;/p&gt;
+&lt;p&gt;C# 中应使用：&lt;/p&gt;
+&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br</summary>
+      
+    
+    
+    
+    <category term="软件开发" scheme="https://dengzile.com/categories/%E8%BD%AF%E4%BB%B6%E5%BC%80%E5%8F%91/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>白云山® 何济公® 红霉素眼膏说明书</title>
+    <link href="https://dengzile.com/2020/09/02/%E7%99%BD%E4%BA%91%E5%B1%B1-%E4%BD%95%E6%B5%8E%E5%85%AC-%E7%BA%A2%E9%9C%89%E7%B4%A0%E7%9C%BC%E8%86%8F%E8%AF%B4%E6%98%8E%E4%B9%A6/"/>
+    <id>https://dengzile.com/2020/09/02/%E7%99%BD%E4%BA%91%E5%B1%B1-%E4%BD%95%E6%B5%8E%E5%85%AC-%E7%BA%A2%E9%9C%89%E7%B4%A0%E7%9C%BC%E8%86%8F%E8%AF%B4%E6%98%8E%E4%B9%A6/</id>
+    <published>2020-09-02T07:21:39.000Z</published>
+    <updated>2020-12-30T19:06:07.812Z</updated>
+    
+    <content type="html"><![CDATA[<p><img src="https://dengzile.com/wp-content/uploads/2020/09/image-3.png"></p><p><img src="https://dengzile.com/wp-content/uploads/2020/09/image-4.png"></p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;&lt;img src=&quot;https://dengzile.com/wp-content/uploads/2020/09/image-3.png&quot;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;https://dengzile.com/wp-content/uploads/2020/09/</summary>
+      
+    
+    
+    
+    <category term="说明书" scheme="https://dengzile.com/categories/%E8%AF%B4%E6%98%8E%E4%B9%A6/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>非布司他片 说明书</title>
+    <link href="https://dengzile.com/2020/09/02/%E9%9D%9E%E5%B8%83%E5%8F%B8%E4%BB%96%E7%89%87-%E8%AF%B4%E6%98%8E%E4%B9%A6/"/>
+    <id>https://dengzile.com/2020/09/02/%E9%9D%9E%E5%B8%83%E5%8F%B8%E4%BB%96%E7%89%87-%E8%AF%B4%E6%98%8E%E4%B9%A6/</id>
+    <published>2020-09-02T07:13:57.000Z</published>
+    <updated>2020-12-30T18:59:01.630Z</updated>
+    
+    <content type="html"><![CDATA[<p><img src="https://dengzile.com/wp-content/uploads/2020/09/image-1-683x1024.png"></p><p><img src="https://dengzile.com/wp-content/uploads/2020/09/image-2-665x1024.png"></p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;&lt;img src=&quot;https://dengzile.com/wp-content/uploads/2020/09/image-1-683x1024.png&quot;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;https://dengzile.com/wp-content/uploads</summary>
+      
+    
+    
+    
+    <category term="说明书" scheme="https://dengzile.com/categories/%E8%AF%B4%E6%98%8E%E4%B9%A6/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>同仁堂 知柏地黄丸 说明书</title>
+    <link href="https://dengzile.com/2020/09/02/%E5%90%8C%E4%BB%81%E5%A0%82-%E7%9F%A5%E6%9F%8F%E5%9C%B0%E9%BB%84%E4%B8%B8-%E8%AF%B4%E6%98%8E%E4%B9%A6/"/>
+    <id>https://dengzile.com/2020/09/02/%E5%90%8C%E4%BB%81%E5%A0%82-%E7%9F%A5%E6%9F%8F%E5%9C%B0%E9%BB%84%E4%B8%B8-%E8%AF%B4%E6%98%8E%E4%B9%A6/</id>
+    <published>2020-09-02T07:08:04.000Z</published>
+    <updated>2020-12-30T18:59:01.444Z</updated>
+    
+    <content type="html"><![CDATA[<p><img src="https://dengzile.com/wp-content/uploads/2020/09/image.png"></p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;&lt;img src=&quot;https://dengzile.com/wp-content/uploads/2020/09/image.png&quot;&gt;&lt;/p&gt;
+</summary>
+      
+    
+    
+    
+    <category term="说明书" scheme="https://dengzile.com/categories/%E8%AF%B4%E6%98%8E%E4%B9%A6/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>使用MifareOne进行写入手环、手机门禁卡步骤</title>
+    <link href="https://dengzile.com/2020/08/26/%E4%BD%BF%E7%94%A8mifareone%E8%BF%9B%E8%A1%8C%E5%86%99%E5%85%A5%E6%89%8B%E7%8E%AF%E3%80%81%E6%89%8B%E6%9C%BA%E9%97%A8%E7%A6%81%E5%8D%A1%E6%AD%A5%E9%AA%A4/"/>
+    <id>https://dengzile.com/2020/08/26/%E4%BD%BF%E7%94%A8mifareone%E8%BF%9B%E8%A1%8C%E5%86%99%E5%85%A5%E6%89%8B%E7%8E%AF%E3%80%81%E6%89%8B%E6%9C%BA%E9%97%A8%E7%A6%81%E5%8D%A1%E6%AD%A5%E9%AA%A4/</id>
+    <published>2020-08-26T03:35:58.000Z</published>
+    <updated>2020-12-30T19:03:09.724Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="一、准备材料"><a href="#一、准备材料" class="headerlink" title="一、准备材料"></a>一、准备材料</h2><p>1、MifareOne</p><p>2、M1卡分析助手 - 用来制作只有ID序号的空白卡（<a href="http://www.ickezhan.com/bbs/forum.php?mod=viewthread&amp;tid=1&amp;extra=page=1%EF%BC%89">http://www.ickezhan.com/bbs/forum.php?mod=viewthread&amp;tid=1&amp;extra=page%3D1）</a></p><p>3、空白的UID卡一张</p><p>4、已经Dump出来的卡片文件（mfd）</p><p>5、空白卡的TXT文件</p><h2 id="二、制作一张加密卡至手机或手环"><a href="#二、制作一张加密卡至手机或手环" class="headerlink" title="二、制作一张加密卡至手机或手环"></a>二、制作一张加密卡至手机或手环</h2><p>1、首先我们使用M1卡分析助手打开MFD文件（直接拖进软件），复制第一段，替换进空白卡的第一行，让此卡仅有卡号及序列号，以便手机认为此卡是非加密卡。空白卡的TXT文件也可以自己制作，只是把1~15扇区的内容清除、密码都改为FF即可。仅留0扇区。此作用为让手机能成功模拟卡号。（因为开空白卡是无法重写卡号，只能通过模拟一个假空白卡来欺骗手机，让手机认为我在模拟一个未加密卡，从而成功模拟。）</p><p><img src="https://dengzile.com/wp-content/uploads/2020/08/image-1-1024x337.png"></p><p>我们看到TXT文件0扇区已经改成我们原卡的卡号及序列号</p><p>2、把空白卡转换为DUMP文件，我们把修改完成的TXT文件，【直接拖动】至M1卡分析助手。选择【文件】-【导出DUMP文件】</p><p><img src="https://dengzile.com/wp-content/uploads/2020/08/image-2.png"></p><p>导出文件后才能让M1fareOne写入UID卡</p><p>3、使用MifareOne将刚制作的空白卡DUMP文件写入UID卡。点击见下图。</p><p><img src="https://dengzile.com/wp-content/uploads/2020/08/image-3.png"></p><p>第二步时需要选择文件，记得不要选错，选择后把卡靠近读卡器</p><p><img src="https://dengzile.com/wp-content/uploads/2020/08/image-4.png"></p><p>注意，显示写入 64/64个块才是完成。</p><p>4、用手机、手环模拟该卡，使用手机直接模拟门禁卡（此步骤省略）</p><p>5、将加密数据写入手机、手环（此步骤最为重要）（如果无法正常写入，请重启软件，加载密钥可选。如果点击写入普通卡需要选择，请选择取消【空白卡】）</p><p><img src="https://dengzile.com/wp-content/uploads/2020/08/image-5.png"></p><p>6、使用手环、手机切换到激活卡模式（小米手机双击电源键选择对应的卡、小米手环在卡包中选择已经写入的卡）</p><p><img src="https://dengzile.com/wp-content/uploads/2020/08/image-6.png"></p><p>显示 63/64个块即为成功。否则请检查步骤，或者重新尝试。</p><p>7、有一些卡显示不足63个块亦可成功，比较奇怪，所以还是请大家多多尝试。本教程仅作为使用知识归纳，请勿用作非法用途。如何取得MFD文件，请自行查找相关文档</p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;h2 id=&quot;一、准备材料&quot;&gt;&lt;a href=&quot;#一、准备材料&quot; class=&quot;headerlink&quot; title=&quot;一、准备材料&quot;&gt;&lt;/a&gt;一、准备材料&lt;/h2&gt;&lt;p&gt;1、MifareOne&lt;/p&gt;
+&lt;p&gt;2、M1卡分析助手 - 用来制作只有ID序号的空白卡（&lt;a href=</summary>
+      
+    
+    
+    
+    <category term="软件经验" scheme="https://dengzile.com/categories/%E8%BD%AF%E4%BB%B6%E7%BB%8F%E9%AA%8C/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>UNIAPP中scroll-view高度自适应</title>
+    <link href="https://dengzile.com/2020/08/25/uniapp%E4%B8%ADscroll-view%E9%AB%98%E5%BA%A6%E8%87%AA%E9%80%82%E5%BA%94/"/>
+    <id>https://dengzile.com/2020/08/25/uniapp%E4%B8%ADscroll-view%E9%AB%98%E5%BA%A6%E8%87%AA%E9%80%82%E5%BA%94/</id>
+    <published>2020-08-25T14:01:59.000Z</published>
+    <updated>2020-11-08T02:13:05.546Z</updated>
+    
+    <content type="html"><![CDATA[<p>写程序总有不少坑，网站方法千千万，找到一个适合自己才最重要。</p><h2 id="一、我的需求"><a href="#一、我的需求" class="headerlink" title="一、我的需求"></a>一、我的需求</h2><p><img src="https://dengzile.com/wp-content/uploads/2020/08/image.png"></p><p>由于UNIAPP计算高度在各个平台非常复杂，HTML5有导航栏，微信小程序有胶囊位置。正常来说，我们获取【整个设备的高度-状态栏高度-导航栏高度-tabbar高度-工具栏高度】 ，我们才能获取我们需要设置的高度。获取过程根据不同设备、平台会导致异常调试麻烦。</p><h2 id="二、我的方法"><a href="#二、我的方法" class="headerlink" title="二、我的方法"></a>二、我的方法</h2><p>首先，我们把Srcroll-view 嵌套在View内，并且把高度设置为0，绑定style。使用getSystemInfo函数的windowHeight获取内部大小，这样我们就不需要获取设备大小。直接减去固定高度的工具栏，即可计算出Scroll-view的高度。为什么我们高度一开始要设置为0，因为如果文章过长，而没设置高度，会导致windowHeight的值为整个页面高度，包括了溢出的高度，这样子我们就无法计算内容页的高度了。</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;view :style&#x3D;&quot;[&#123;height:stockListHeight + &#39;px&#39;&#125;]&quot;&gt;</span><br><span class="line">&lt;scroll-view&gt;</span><br><span class="line">&lt;&#x2F;scroll-view&gt;</span><br><span class="line">&lt;&#x2F;view&gt;</span><br></pre></td></tr></table></figure><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">&lt;script&gt;</span><br><span class="line">export default &#123;</span><br><span class="line">data() &#123;</span><br><span class="line">return &#123;</span><br><span class="line">stockListHeight: 0</span><br><span class="line">&#125;</span><br><span class="line">&#125;,</span><br><span class="line">methods: &#123;</span><br><span class="line"></span><br><span class="line">&#125;,</span><br><span class="line">onReady() &#123;</span><br><span class="line">var _self &#x3D; this;</span><br><span class="line">uni.getSystemInfo(&#123;</span><br><span class="line">success: (e) &#x3D;&gt; &#123; &#x2F;&#x2F; resu 可以获取当前屏幕的高度</span><br><span class="line">_self.stockListHeight &#x3D; e.windowHeight - uni.upx2px(135);</span><br><span class="line">&#125;,</span><br><span class="line">fail: (res) &#x3D;&gt; &#123;</span><br><span class="line">&#125;</span><br><span class="line">&#125;)</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line">&lt;&#x2F;script&gt;</span><br></pre></td></tr></table></figure><p>记得第一个嵌套View要给他设置一个overflow: scroll;要不它会把他撑开。导致滚动的意义消失了</p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;写程序总有不少坑，网站方法千千万，找到一个适合自己才最重要。&lt;/p&gt;
+&lt;h2 id=&quot;一、我的需求&quot;&gt;&lt;a href=&quot;#一、我的需求&quot; class=&quot;headerlink&quot; title=&quot;一、我的需求&quot;&gt;&lt;/a&gt;一、我的需求&lt;/h2&gt;&lt;p&gt;&lt;img src=&quot;https:</summary>
+      
+    
+    
+    
+    <category term="软件开发" scheme="https://dengzile.com/categories/%E8%BD%AF%E4%BB%B6%E5%BC%80%E5%8F%91/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>在VisualStudio 2019中使用C++ CLI创建DLL</title>
+    <link href="https://dengzile.com/2020/07/14/%E5%9C%A8visualstudio-2019%E4%B8%AD%E4%BD%BF%E7%94%A8c-cli%E5%88%9B%E5%BB%BAdll/"/>
+    <id>https://dengzile.com/2020/07/14/%E5%9C%A8visualstudio-2019%E4%B8%AD%E4%BD%BF%E7%94%A8c-cli%E5%88%9B%E5%BB%BAdll/</id>
+    <published>2020-07-14T15:00:32.000Z</published>
+    <updated>2020-12-30T19:02:28.857Z</updated>
+    
+    <content type="html"><![CDATA[<p>由于不太懂C++，所以一直想用CLI去做，但是可怜的资源很少，于是从这篇文章中修改了一些步骤，就能在2019中跑起来。</p><h2 id="关键点1️⃣"><a href="#关键点1️⃣" class="headerlink" title="关键点1️⃣"></a>关键点1️⃣</h2><p>安装过程中必须勾选C++桌面开发及对C++/CLI支持，否则Visualstudio默认不会选择上，于是你在创建项目上，就无法找到CLI项目</p><p><img src="https://dengzile.com/wp-content/uploads/2020/07/image.png"></p><h2 id="关键点2️⃣"><a href="#关键点2️⃣" class="headerlink" title="关键点2️⃣"></a>关键点2️⃣</h2><p><img src="https://dengzile.com/wp-content/uploads/2020/07/image-1.png"></p><p>创建项目时，需要选择CLR类库(.Net Framework)，不要选错哦！</p><h2 id="关键点3️⃣"><a href="#关键点3️⃣" class="headerlink" title="关键点3️⃣"></a>关键点3️⃣</h2><p><img src="https://dengzile.com/wp-content/uploads/2020/07/image-2-1024x554.png"></p><p>创建类库项目不会默认新建DLLMain入口，需要自己在类中添加。</p><p>需要自行引入Windows.Forms，以便实现弹出对话框。</p><p>关键点4️⃣</p><p><img src="https://dengzile.com/wp-content/uploads/2020/07/image-4.png"></p><p>pch.h和 windows.h引入顺序有考究，否则一直会编译报错。</p><p><img src="https://dengzile.com/wp-content/uploads/2020/07/image-5-1024x205.png"></p><p>最后献上已经格式化的代码</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">#pragma once</span><br><span class="line"></span><br><span class="line">#include &quot;pch.h&quot;</span><br><span class="line">#include &lt;windows.h&gt;</span><br><span class="line">using namespace System;</span><br><span class="line">void TEST() &#123;</span><br><span class="line">System::Windows::Forms::MessageBox::Show(&quot;啦啦啦.已经注入并执行啦&quot;);</span><br><span class="line">&#125;</span><br><span class="line">#pragma managed(push, off)</span><br><span class="line">BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)</span><br><span class="line">&#123;</span><br><span class="line">if (DLL_PROCESS_ATTACH &#x3D;&#x3D; ul_reason_for_call)</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">TEST();</span><br><span class="line">&#125;</span><br><span class="line">return TRUE;</span><br><span class="line">&#125;</span><br><span class="line">#pragma managed(pop)</span><br></pre></td></tr></table></figure><p>参考文章：<a href="https://jingyan.baidu.com/article/20095761c1434acb0721b4bb.html">https://jingyan.baidu.com/article/20095761c1434acb0721b4bb.html</a></p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;由于不太懂C++，所以一直想用CLI去做，但是可怜的资源很少，于是从这篇文章中修改了一些步骤，就能在2019中跑起来。&lt;/p&gt;
+&lt;h2 id=&quot;关键点1️⃣&quot;&gt;&lt;a href=&quot;#关键点1️⃣&quot; class=&quot;headerlink&quot; title=&quot;关键点1️⃣&quot;&gt;&lt;/a&gt;关</summary>
+      
+    
+    
+    
+    <category term="软件开发" scheme="https://dengzile.com/categories/%E8%BD%AF%E4%BB%B6%E5%BC%80%E5%8F%91/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>使用PowerCLI封装ESXI 7网卡驱动及其他模块</title>
+    <link href="https://dengzile.com/2020/06/24/%E4%BD%BF%E7%94%A8powercli%E5%B0%81%E8%A3%85esxi-7%E7%BD%91%E5%8D%A1%E9%A9%B1%E5%8A%A8%E5%8F%8A%E5%85%B6%E4%BB%96%E6%A8%A1%E5%9D%97/"/>
+    <id>https://dengzile.com/2020/06/24/%E4%BD%BF%E7%94%A8powercli%E5%B0%81%E8%A3%85esxi-7%E7%BD%91%E5%8D%A1%E9%A9%B1%E5%8A%A8%E5%8F%8A%E5%85%B6%E4%BB%96%E6%A8%A1%E5%9D%97/</id>
+    <published>2020-06-23T17:23:28.000Z</published>
+    <updated>2020-12-30T19:03:09.734Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="0x0-前言"><a href="#0x0-前言" class="headerlink" title="0x0 前言"></a>0x0 前言</h2><p>由于网络不稳定，使用科学上网也无法正常执行整个封装流程，所以我在阿里云租了一台美国弗吉利亚的抢占式实例进行封装。如果网络不稳定，也建议大家这样做。</p><h2 id="0x1-安装PowerCLI"><a href="#0x1-安装PowerCLI" class="headerlink" title="0x1 安装PowerCLI"></a>0x1 安装PowerCLI</h2><p>安装最新版12.0，官网已经没了安装包，我们需要使用PowerShell进行。</p><p><img src="https://dengzile.com/wp-content/uploads/2020/06/image-3.png"></p><p>Install-Module -Name VMware.PowerCLI -Scope CurrentUser -AllowClobber</p><h2 id="0x2-下载ESXi-Customizer-PS"><a href="#0x2-下载ESXi-Customizer-PS" class="headerlink" title="0x2 下载ESXi-Customizer-PS"></a>0x2 下载ESXi-Customizer-PS</h2><p>我们去Github进行Clone整个项目到本地，然后复制到云服务器备用。</p><p><img src="https://dengzile.com/wp-content/uploads/2020/06/image-4.png"></p><p><a href="https://github.com/VFrontDe/ESXi-Customizer-PS">https://github.com/VFrontDe/ESXi-Customizer-PS</a></p><p>具体用法也可以参照其官网：<a href="https://www.v-front.de/p/esxi-customizer-ps.html">https://www.v-front.de/p/esxi-customizer-ps.html</a></p><h2 id="0x3-进行封装"><a href="#0x3-进行封装" class="headerlink" title="0x3 进行封装"></a>0x3 进行封装</h2><p>我们进入脚本目录输入指令 其中 <strong>net55-r8168</strong> 为我需要封装的r8168网卡，具体想封装的模块可以进去以下网址查看：<a href="https://vibsdepot.v-front.de/wiki/index.php/List/_of/_currently/_available/_ESXi/_packages">https://vibsdepot.v-front.de/wiki/index.php/List\_of\_currently\_available\_ESXi\_packages</a> 。</p><p>而-v67是 EXSI 6.7版本，如果我们想封装 7.0，则改成 -v70 即可！</p><p>.\ESXi-Customizer-PS.ps1 -v67 -vft -load net55-r8168</p><p><img src="https://dengzile.com/wp-content/uploads/2020/06/image-5.png"></p><p>看到All done，证明完成了，我们可以复制ISO文件到本地。</p><p><img src="https://dengzile.com/wp-content/uploads/2020/06/image-7.png"></p><p>如果出现以下问题，基本上是网络不稳定，我在美国服务器也会偶尔出现。</p><p><img src="https://dengzile.com/wp-content/uploads/2020/06/image-6.png"></p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;h2 id=&quot;0x0-前言&quot;&gt;&lt;a href=&quot;#0x0-前言&quot; class=&quot;headerlink&quot; title=&quot;0x0 前言&quot;&gt;&lt;/a&gt;0x0 前言&lt;/h2&gt;&lt;p&gt;由于网络不稳定，使用科学上网也无法正常执行整个封装流程，所以我在阿里云租了一台美国弗吉利亚的抢占式实例进行封</summary>
+      
+    
+    
+    
+    <category term="软件经验" scheme="https://dengzile.com/categories/%E8%BD%AF%E4%BB%B6%E7%BB%8F%E9%AA%8C/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>使用Gulp 简单打包合并JS文件</title>
+    <link href="https://dengzile.com/2020/06/09/%E4%BD%BF%E7%94%A8gulp-%E7%AE%80%E5%8D%95%E6%89%93%E5%8C%85%E5%90%88%E5%B9%B6js%E6%96%87%E4%BB%B6/"/>
+    <id>https://dengzile.com/2020/06/09/%E4%BD%BF%E7%94%A8gulp-%E7%AE%80%E5%8D%95%E6%89%93%E5%8C%85%E5%90%88%E5%B9%B6js%E6%96%87%E4%BB%B6/</id>
+    <published>2020-06-08T17:46:36.000Z</published>
+    <updated>2020-11-08T02:13:05.539Z</updated>
+    
+    <content type="html"><![CDATA[<p>不是每个人都是需要做持续化集成，也不是每一个人需要做运维自动化，今天我只需要一个小小的需求，就是把多一个JS文件合并并压缩。</p><p>于是我在网站找了几个方案，一个是Webpack，一个是Gulp。</p><p>Webpack要依赖入口文件，我们有一些古老脚本使用了全局变量，Webpack直接给我忽略了，虽然命令简单，直接安装好Webpack Cli后，使用命令行，可以达到快速合并，具体命令如下</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">webpack-cli 要压缩的文件名1 要压缩的文件名1 -o 压缩后文件名.js</span><br></pre></td></tr></table></figure><p>还有一个方案，是使用在线压缩，他虽然使用 gulp ，但是他不支持es5以上语法，</p><p><a href="https://filesmerge.com/zh/merge-javascript-files">https://filesmerge.com/zh/merge-javascript-files</a></p><p>最后，我们还是尝试快速了解Gulp，来打包自己的JS文件</p><p>首先，我们建一个临时目录</p><p>进入CDM，创建一个NPM环境</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm init -y</span><br></pre></td></tr></table></figure><p>然后我们安装所需要的包及依赖。</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">npm i -g gulp-cli</span><br><span class="line">npm i -D gulp</span><br><span class="line">npm i -D gulp-uglify &#x2F;&#x2F;压缩</span><br><span class="line">npm i -D gulp-concat &#x2F;&#x2F;合并</span><br><span class="line">npm i -D gulp-babel &#x2F;&#x2F;转换新版本js</span><br><span class="line">npm i -D babel-core &#x2F;&#x2F;babel 核心</span><br><span class="line">npm i -D babel-preset-es2015 &#x2F;&#x2F;bebel插件</span><br></pre></td></tr></table></figure><p>安装好后，我们新建一个gulpfile.js文件，这个文件是用来编写压缩规则的。我先把一个最简单的压缩规则写出来，如果只是压缩多个js文件，也不需要更改什么了。</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">const &#123; src, dest &#125; &#x3D; require(&#39;gulp&#39;);</span><br><span class="line">var uglify &#x3D; require(&#39;gulp-uglify&#39;);</span><br><span class="line">var concat &#x3D; require(&#39;gulp-concat&#39;);</span><br><span class="line">var babel &#x3D; require(&#39;gulp-babel&#39;);</span><br><span class="line">exports.default &#x3D; function() &#123;</span><br><span class="line">  return src(&#39;js&#x2F;*.js&#39;) &#x2F;&#x2F;输入js文件</span><br><span class="line">.pipe(babel(&#123;</span><br><span class="line">                presets: [&#39;es2015&#39;] &#x2F;&#x2F; es5检查机制</span><br><span class="line">            &#125;))</span><br><span class="line">.pipe(concat(&#39;all.js&#39;)) &#x2F;&#x2F;合并在一起</span><br><span class="line">    .pipe(uglify())  &#x2F;&#x2F;压缩</span><br><span class="line">    .pipe(dest(&#39;output&#x2F;&#39;)); &#x2F;&#x2F;输出目录</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>我们新建一个js目录把需要压缩的文件放进去，然后在命令行执行 gulp</p><p>等待几秒后，就可以在output目录找到all.js，我们就可以愉快玩耍了~</p><p><img src="https://dengzile.com/wp-content/uploads/2020/06/image-1.png"></p><p>压缩前后大小对比，因为本次压缩包含了全国省份和地区列表，所以大小没小太多，但是如果一个普通js文件压缩比也是不错的。</p><p><img src="https://dengzile.com/wp-content/uploads/2020/06/image-2.png"></p><p>我看看我也做一个在线工具，方便一些只想压缩js的人，Gulp工具挺强大，但是很多功能我也暂时不需要~</p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;不是每个人都是需要做持续化集成，也不是每一个人需要做运维自动化，今天我只需要一个小小的需求，就是把多一个JS文件合并并压缩。&lt;/p&gt;
+&lt;p&gt;于是我在网站找了几个方案，一个是Webpack，一个是Gulp。&lt;/p&gt;
+&lt;p&gt;Webpack要依赖入口文件，我们有一些古老脚本使用了</summary>
+      
+    
+    
+    
+    <category term="软件开发" scheme="https://dengzile.com/categories/%E8%BD%AF%E4%BB%B6%E5%BC%80%E5%8F%91/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>PHP 快速获取IP地理信息</title>
+    <link href="https://dengzile.com/2020/06/07/php-%E5%BF%AB%E9%80%9F%E8%8E%B7%E5%8F%96ip%E6%9D%A5%E6%BA%90/"/>
+    <id>https://dengzile.com/2020/06/07/php-%E5%BF%AB%E9%80%9F%E8%8E%B7%E5%8F%96ip%E6%9D%A5%E6%BA%90/</id>
+    <published>2020-06-06T18:36:00.000Z</published>
+    <updated>2020-12-30T18:56:21.493Z</updated>
+    
+    <content type="html"><![CDATA[<p>书接上一回，现在API那么方便，但是获取IP地址的API大多收费，也麻烦。我们怎样用PHP快速查询到IP地址的所在地呢？</p><p>IPIP.net 是现在比较准确的数据库，免费提供可以精确到地级市的IP数据，也能满足我们大部分使用场景。因为IP地址数据经常变化，所以一些没维护的数据，可能已经失效了。</p><p>数据库下载地址： <a href="https://www.ipip.net/free_download/">https://www.ipip.net/free_download/</a></p><p>纯真数据库IPDB版本：<a href="https://github.com/metowolf/qqwry.ipdb">https://github.com/metowolf/qqwry.ipdb</a></p><p>下载数据需要注册并且登陆。</p><p>PHP API Github 地址：<a href="https://github.com/ipipdotnet/ipdb-php">https://github.com/ipipdotnet/ipdb-php</a></p><p>下载完成后，放在根目录，因为是免费，只有city.php有效，其他基站api也没必要，可以适度精简。</p><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">require_once</span> <span class="keyword">__DIR__</span>.<span class="string">&#x27;/ipip/db/Reader.php&#x27;</span>;</span><br><span class="line"><span class="keyword">require_once</span> <span class="keyword">__DIR__</span>.<span class="string">&#x27;/ipip/db/City.php&#x27;</span>;</span><br><span class="line"></span><br><span class="line">$city = <span class="keyword">new</span> ipip\db\City(<span class="keyword">__DIR__</span>.<span class="string">&#x27;/ipipfree.ipdb&#x27;</span>);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">$ip = $city-&gt;find(getip(),<span class="string">&quot;CN&quot;</span>);</span><br><span class="line"><span class="keyword">echo</span> <span class="string">&#x27;var lo=&quot;&#x27;</span>.$ip[<span class="number">1</span>].<span class="string">&#x27;&quot;, lc=&quot;&#x27;</span>.$ip[<span class="number">2</span>].<span class="string">&#x27;&quot;; var localAddress=&#123;city:&quot;&#x27;</span>.$ip[<span class="number">2</span>].<span class="string">&#x27;&quot;, province:&quot;&#x27;</span>.$ip[<span class="number">1</span>].<span class="string">&#x27;&quot;&#125;&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">getip</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">static</span> $ip = <span class="string">&#x27;&#x27;</span>;</span><br><span class="line">    $ip = $_SERVER[<span class="string">&#x27;REMOTE_ADDR&#x27;</span>];</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">isset</span>($_SERVER[<span class="string">&#x27;HTTP_CDN_SRC_IP&#x27;</span>])) &#123;</span><br><span class="line">        $ip = $_SERVER[<span class="string">&#x27;HTTP_CDN_SRC_IP&#x27;</span>];</span><br><span class="line">    &#125; <span class="keyword">elseif</span> (<span class="keyword">isset</span>($_SERVER[<span class="string">&#x27;HTTP_CLIENT_IP&#x27;</span>]) &amp;&amp; preg_match(<span class="string">&#x27;/^([0-9]&#123;1,3&#125;\.)&#123;3&#125;[0-9]&#123;1,3&#125;$/&#x27;</span>, $_SERVER[<span class="string">&#x27;HTTP_CLIENT_IP&#x27;</span>])) &#123;</span><br><span class="line">        $ip = $_SERVER[<span class="string">&#x27;HTTP_CLIENT_IP&#x27;</span>];</span><br><span class="line">    &#125; <span class="keyword">elseif</span> (<span class="keyword">isset</span>($_SERVER[<span class="string">&#x27;HTTP_X_FORWARDED_FOR&#x27;</span>]) <span class="keyword">and</span> preg_match_all(<span class="string">&#x27;#\d&#123;1,3&#125;\.\d&#123;1,3&#125;\.\d&#123;1,3&#125;\.\d&#123;1,3&#125;#s&#x27;</span>, $_SERVER[<span class="string">&#x27;HTTP_X_FORWARDED_FOR&#x27;</span>], $matches)) &#123;</span><br><span class="line">        <span class="keyword">foreach</span> ($matches[<span class="number">0</span>] <span class="keyword">as</span> $xip) &#123;</span><br><span class="line">            <span class="keyword">if</span> (!preg_match(<span class="string">&#x27;#^(10172\.16192\.168)\.#&#x27;</span>, $xip)) &#123;</span><br><span class="line">                $ip = $xip;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> $ip;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;书接上一回，现在API那么方便，但是获取IP地址的API大多收费，也麻烦。我们怎样用PHP快速查询到IP地址的所在地呢？&lt;/p&gt;
+&lt;p&gt;IPIP.net 是现在比较准确的数据库，免费提供可以精确到地级市的IP数据，也能满足我们大部分使用场景。因为IP地址数据经常变化，所以一</summary>
+      
+    
+    
+    
+    <category term="软件开发" scheme="https://dengzile.com/categories/%E8%BD%AF%E4%BB%B6%E5%BC%80%E5%8F%91/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>PHP &amp; C#  获取客户端IP</title>
+    <link href="https://dengzile.com/2020/06/07/php-%E8%8E%B7%E5%8F%96%E5%AE%A2%E6%88%B7%E7%AB%AFip/"/>
+    <id>https://dengzile.com/2020/06/07/php-%E8%8E%B7%E5%8F%96%E5%AE%A2%E6%88%B7%E7%AB%AFip/</id>
+    <published>2020-06-06T18:14:47.000Z</published>
+    <updated>2020-11-08T02:13:05.534Z</updated>
+    
+    <content type="html"><![CDATA[<p>正常来说只需要直接执行一段函数即可，但是如果遇到使用CDN等情况，获取到的IP就未必正确了，所以我们还需要一段函数协助我们快速获取客户端IP。</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">function getip()</span><br><span class="line">&#123;</span><br><span class="line">    static $ip &#x3D; &#39;&#39;;</span><br><span class="line">    $ip &#x3D; $_SERVER[&#39;REMOTE_ADDR&#39;];</span><br><span class="line">    if (isset($_SERVER[&#39;HTTP_CDN_SRC_IP&#39;])) &#123;</span><br><span class="line">        $ip &#x3D; $_SERVER[&#39;HTTP_CDN_SRC_IP&#39;];</span><br><span class="line">    &#125; elseif (isset($_SERVER[&#39;HTTP_CLIENT_IP&#39;]) &amp;&amp; preg_match(&#39;&#x2F;^([0-9]&#123;1,3&#125;\.)&#123;3&#125;[0-9]&#123;1,3&#125;$&#x2F;&#39;, $_SERVER[&#39;HTTP_CLIENT_IP&#39;])) &#123;</span><br><span class="line">        $ip &#x3D; $_SERVER[&#39;HTTP_CLIENT_IP&#39;];</span><br><span class="line">    &#125; elseif (isset($_SERVER[&#39;HTTP_X_FORWARDED_FOR&#39;]) and preg_match_all(&#39;#\d&#123;1,3&#125;\.\d&#123;1,3&#125;\.\d&#123;1,3&#125;\.\d&#123;1,3&#125;#s&#39;, $_SERVER[&#39;HTTP_X_FORWARDED_FOR&#39;], $matches)) &#123;</span><br><span class="line">        foreach ($matches[0] as $xip) &#123;</span><br><span class="line">            if (!preg_match(&#39;#^(10172\.16192\.168)\.#&#39;, $xip)) &#123;</span><br><span class="line">                $ip &#x3D; $xip;</span><br><span class="line">                break;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return $ip;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>以下是C#代码</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">protected string GetIp()</span><br><span class="line">&#123;</span><br><span class="line">    string loginip &#x3D; &quot;&quot;;</span><br><span class="line">    &#x2F;&#x2F;Request.ServerVariables[&quot;&quot;]--获取服务变量集合 </span><br><span class="line">    if (Request.ServerVariables[&quot;REMOTE_ADDR&quot;] !&#x3D; null) &#x2F;&#x2F;判断发出请求的远程主机的ip地址是否为空</span><br><span class="line">    &#123;</span><br><span class="line">        &#x2F;&#x2F;获取发出请求的远程主机的Ip地址</span><br><span class="line">        loginip &#x3D; Request.ServerVariables[&quot;REMOTE_ADDR&quot;].ToString();</span><br><span class="line">    &#125;</span><br><span class="line">    &#x2F;&#x2F;判断登记用户是否使用设置代理</span><br><span class="line">    else if (Request.ServerVariables[&quot;HTTP_VIA&quot;] !&#x3D; null)</span><br><span class="line">    &#123;</span><br><span class="line">        if (Request.ServerVariables[&quot;HTTP_X_FORWARDED_FOR&quot;] !&#x3D; null)</span><br><span class="line">        &#123;</span><br><span class="line">            &#x2F;&#x2F;获取代理的服务器Ip地址</span><br><span class="line">            loginip &#x3D; Request.ServerVariables[&quot;HTTP_X_FORWARDED_FOR&quot;].ToString();</span><br><span class="line">        &#125;</span><br><span class="line">        else</span><br><span class="line">        &#123;</span><br><span class="line">            &#x2F;&#x2F;获取客户端IP</span><br><span class="line">            loginip &#x3D; Request.UserHostAddress;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    else</span><br><span class="line">    &#123;</span><br><span class="line">        &#x2F;&#x2F;获取客户端IP</span><br><span class="line">        loginip &#x3D; Request.UserHostAddress;</span><br><span class="line">    &#125;</span><br><span class="line">    return loginip;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;正常来说只需要直接执行一段函数即可，但是如果遇到使用CDN等情况，获取到的IP就未必正确了，所以我们还需要一段函数协助我们快速获取客户端IP。&lt;/p&gt;
+&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;</summary>
+      
+    
+    
+    
+    <category term="软件开发" scheme="https://dengzile.com/categories/%E8%BD%AF%E4%BB%B6%E5%BC%80%E5%8F%91/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>PHP快速访问数据库</title>
+    <link href="https://dengzile.com/2020/06/07/php%E5%BF%AB%E9%80%9F%E8%AE%BF%E9%97%AE%E6%95%B0%E6%8D%AE%E5%BA%93/"/>
+    <id>https://dengzile.com/2020/06/07/php%E5%BF%AB%E9%80%9F%E8%AE%BF%E9%97%AE%E6%95%B0%E6%8D%AE%E5%BA%93/</id>
+    <published>2020-06-06T18:12:44.000Z</published>
+    <updated>2020-11-08T02:13:05.532Z</updated>
+    
+    <content type="html"><![CDATA[<p>最近在做一些小软件，需要写一些脚本程序，本来用asp.net写的，但是奈何.net越来越复杂，Visual Studio 2019，连新建网站都消失了。</p><p>必须在安装程序找回，否则创建的程序，都需要经过编译才能执行，还附带了一些编译器在一起。</p><p>所以，还是PHP比较简便一些，也适合以后快速部署到Lunix。</p><p>经过搜索，决定用一个简单的框架 medoo</p><p>官网链接： <a href="https://medoo.lvtao.net/">https://medoo.lvtao.net</a></p><p><img src="https://dengzile.com/wp-content/uploads/2020/06/image-837x1024.png"></p><p>比Nodejs还简便一些，至少Php现在都自带Mysql，Nodejs还得自己装，还要部署到服务器做代理。</p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;最近在做一些小软件，需要写一些脚本程序，本来用asp.net写的，但是奈何.net越来越复杂，Visual Studio 2019，连新建网站都消失了。&lt;/p&gt;
+&lt;p&gt;必须在安装程序找回，否则创建的程序，都需要经过编译才能执行，还附带了一些编译器在一起。&lt;/p&gt;
+&lt;p&gt;所以</summary>
+      
+    
+    
+    
+    <category term="软件开发" scheme="https://dengzile.com/categories/%E8%BD%AF%E4%BB%B6%E5%BC%80%E5%8F%91/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>使用阿里云API快速部署ECI</title>
+    <link href="https://dengzile.com/2020/03/19/%E4%BD%BF%E7%94%A8%E9%98%BF%E9%87%8C%E4%BA%91api%E5%BF%AB%E9%80%9F%E9%83%A8%E7%BD%B2eci/"/>
+    <id>https://dengzile.com/2020/03/19/%E4%BD%BF%E7%94%A8%E9%98%BF%E9%87%8C%E4%BA%91api%E5%BF%AB%E9%80%9F%E9%83%A8%E7%BD%B2eci/</id>
+    <published>2020-03-19T10:38:17.000Z</published>
+    <updated>2020-11-08T02:13:05.529Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="0、前序"><a href="#0、前序" class="headerlink" title="0、前序"></a>0、前序</h2><p>前几篇文章都是在说如何在Lunix里面安装Docker和STF，阿里云最近推出了ECI弹性容器服务。可以理解为一个Docker容器，按秒计费，如果一直开着，费用不低，还不如组一台ECS服务器。如果每次使用时才激活，这样子又可以省钱，又可以快速部署。但是阿里云的创建ECI页面可算是复杂，要输入的东西非常多，这样不利于快速部署。于是我们需要使用API来创建服务于。</p><h2 id="1、准备工作"><a href="#1、准备工作" class="headerlink" title="1、准备工作"></a>1、准备工作</h2><p>ECI需要交换机、EIP、安全组、镜像，我们除了EIP之外，其他都要先建好，因为通常不用修改，没必要在API创建。</p><p>然后进入 OpenAPI Explorer =&gt; <a href="https://open.aliyun.com/apis">https://open.aliyun.com/apis</a> 浏览文档。</p><p>接着，我们需要新建一个 AccessKey 。方法在控制台的右上角找到菜单，如下图：</p><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-21-1024x387.png"></p><p>创建完毕后，记录下 AccessKey 及 Access Key Secret</p><h2 id="2、开始编码"><a href="#2、开始编码" class="headerlink" title="2、开始编码"></a>2、开始编码</h2><p>创建项目.Net项目，NuGet 安装aliyun-net-sdk-core及Newtonsoft.Json</p><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-22-1024x353.png"></p><p>阿里云SDK基本上操作很简单，可以在OpenAPI上查询并且实时调试。</p><p>主要思路是先创建一个 Profile 再 创建一个 DefaultAcsClient，再创建一个CommonRequest</p><p>往CommonRequest扔入需要执行的操作，等待 GetCommonResponse 基本就完成。和HTTP请求类似。</p><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-23.png"></p><p>其中，创建EIP需要用到 AllocateEipAddress 申请EIP DescribeEipAddresses 查看EIP ，ReleaseEipAddress 释放 EIP 参数还是很简单的，略微测试一下即可。</p><p>而新建ECI需要先调试 DescribeContainerGroups 参数，获取 以下几个参数</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">SecurityGroupId   &#x3D;&gt;安全组</span><br><span class="line">VSwitchId    &#x3D;&gt;交换机ID</span><br><span class="line">Container.1.Image  &#x3D;&gt;你需要部署镜像</span><br><span class="line">Container.1.Cpu &#x3D;&gt; CPU</span><br><span class="line">Container.1.Memory &#x3D;&gt;内存</span><br></pre></td></tr></table></figure><p>需要用到的API有 CreateContainerGroup 创建EIP ，DescribeContainerGroups 显示 所有ECI 、DeleteContainerGroup 删除ECI</p><h2 id="3、最后GUI修饰"><a href="#3、最后GUI修饰" class="headerlink" title="3、最后GUI修饰"></a>3、最后GUI修饰</h2><p>我的逻辑是，先创建EIP，然后创建ECI，最后将EIP提交到DNSPod，完成整个创建流程。可以方便我一键搭建需要服务，也免去每次登陆阿里云的烦恼！~但是删除的时候，需要先删除ECI，要过大约一分钟EIP才能释放，所以还是需要人手操作一下。后续也可以根据代码自己写一下。</p><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-24.png"></p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;h2 id=&quot;0、前序&quot;&gt;&lt;a href=&quot;#0、前序&quot; class=&quot;headerlink&quot; title=&quot;0、前序&quot;&gt;&lt;/a&gt;0、前序&lt;/h2&gt;&lt;p&gt;前几篇文章都是在说如何在Lunix里面安装Docker和STF，阿里云最近推出了ECI弹性容器服务。可以理解为一个Docke</summary>
+      
+    
+    
+    
+    <category term="软件开发" scheme="https://dengzile.com/categories/%E8%BD%AF%E4%BB%B6%E5%BC%80%E5%8F%91/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>Python3.6与Docker-compose实践</title>
+    <link href="https://dengzile.com/2020/03/12/python3-6%E4%B8%8Edocker-compose%E5%AE%9E%E8%B7%B5/"/>
+    <id>https://dengzile.com/2020/03/12/python3-6%E4%B8%8Edocker-compose%E5%AE%9E%E8%B7%B5/</id>
+    <published>2020-03-12T13:40:43.000Z</published>
+    <updated>2020-12-30T19:00:30.063Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="0、序章"><a href="#0、序章" class="headerlink" title="0、序章"></a>0、序章</h2><p>Centos7自带Python2，但是很多新软件都以Python3作为开发，那我们首先要安装Python3.6，再安装需要Python的Docker-compose。话不多说，赶紧开始吧！</p><h2 id="1、安装Pythone36"><a href="#1、安装Pythone36" class="headerlink" title="1、安装Pythone36"></a>1、安装Pythone36</h2><p>如果非阿里云镜像，需要多增加切换yum源，否则安装速度非常慢。</p><p>wget -O /etc/yum.repos.d/epel.repo <a href="http://mirrors.aliyun.com/repo/epel-7.repo">http://mirrors.aliyun.com/repo/epel-7.repo</a></p><p>网上很多复杂教程，我们只需要1行命令，即可安装成功，没那么复杂的东西，也会根据依赖，直接安装Pip3</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install python36</span><br></pre></td></tr></table></figure><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-19.png"></p><p>然后，我们测试一下是否安装成功。</p><h2 id="3、安装docker-compose"><a href="#3、安装docker-compose" class="headerlink" title="3、安装docker-compose"></a>3、安装docker-compose</h2><p>接着，我们开始安装docker-compose，也是一行代码即可。</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip3 install docker-compose</span><br></pre></td></tr></table></figure><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-20.png"></p><p>如果速度慢，我们可以找一个切换国内镜像的sh文件，我也找了一下</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wget -N --no-check-certificate http:&#x2F;&#x2F;raw.githubusercontent.com&#x2F;13528080556&#x2F;quick_setup_of_pip_source&#x2F;master&#x2F;create_pip.py &amp;&amp; python3 create_pip.py</span><br></pre></td></tr></table></figure>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;h2 id=&quot;0、序章&quot;&gt;&lt;a href=&quot;#0、序章&quot; class=&quot;headerlink&quot; title=&quot;0、序章&quot;&gt;&lt;/a&gt;0、序章&lt;/h2&gt;&lt;p&gt;Centos7自带Python2，但是很多新软件都以Python3作为开发，那我们首先要安装Python3.6，再安装需要P</summary>
+      
+    
+    
+    
+    <category term="软件经验" scheme="https://dengzile.com/categories/%E8%BD%AF%E4%BB%B6%E7%BB%8F%E9%AA%8C/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>Docker和OpenSTF安装实践</title>
+    <link href="https://dengzile.com/2020/03/11/docker%E5%92%8Copenstf%E5%AE%89%E8%A3%85%E5%AE%9E%E8%B7%B5/"/>
+    <id>https://dengzile.com/2020/03/11/docker%E5%92%8Copenstf%E5%AE%89%E8%A3%85%E5%AE%9E%E8%B7%B5/</id>
+    <published>2020-03-11T15:15:18.000Z</published>
+    <updated>2020-12-30T19:03:09.616Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="0、序言"><a href="#0、序言" class="headerlink" title="0、序言"></a>0、序言</h2><p>最佳实践是在我测试过几个方法后的方法总结，如果有更好，可以评论中告知。本系统基于上篇文章的后续，使用Xshell链接实体机。</p><h2 id="1、Docker的安装"><a href="#1、Docker的安装" class="headerlink" title="1、Docker的安装"></a>1、Docker的安装</h2><p>网上很多教程都挺复杂，官方虽然有，但是网速不尽如人意，阿里云提供了一个镜像安装方式，只需要一句话。就可以在新系统里面安装Docker</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -fsSL https:&#x2F;&#x2F;get.docker.com  bash -s docker --mirror Aliyun</span><br></pre></td></tr></table></figure><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-14.png"></p><h2 id="2、配置一下加速镜像"><a href="#2、配置一下加速镜像" class="headerlink" title="2、配置一下加速镜像"></a>2、配置一下加速镜像</h2><p>Docker也是国外的镜像，原本Docker-cn好像已经访问不了。而阿里云的是需要登陆获取一个私有的地址，速度也不如网易的快，我就修改一下代码，使用网易的加速，但是我发现每个镜像不是所有仓库都完整，所以决定最后用盖茨的。速度是最稳定和最快的！</p><p>由于原本的微软镜像仓库已经失效，替换成 <a href="https://reg-mirror.qiniu.com,或者使用阿里云的镜像加速,请登录后获取地址(/">https://reg-mirror.qiniu.com，或者使用阿里云的镜像加速，请登录后获取地址（</a> <a href="https://cr.console.aliyun.com/cn-hangzhou/instances/mirrors">https://cr.console.aliyun.com/cn-hangzhou/instances/mirrors</a> ）</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -sSL https:&#x2F;&#x2F;get.daocloud.io&#x2F;daotools&#x2F;set_mirror.sh  sh -s https:&#x2F;&#x2F;reg-mirror.qiniu.com</span><br></pre></td></tr></table></figure><p>运行后需要重启Docker 服务才能生效：</p><p>sudo systemctl restart docker</p><p>如果不能直接粘贴，可以一行行来，结束后，可以输入docker info检查一下。</p><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-16.png"></p><p>看到微软的镜像，完成！</p><h2 id="3、安装OpenSTF"><a href="#3、安装OpenSTF" class="headerlink" title="3、安装OpenSTF"></a>3、安装OpenSTF</h2><p>执行Docker Pull拉下镜像</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">docker pull openstf&#x2F;stf:latest</span><br><span class="line">docker pull sorccu&#x2F;adb:latest</span><br><span class="line">docker pull rethinkdb:latest</span><br></pre></td></tr></table></figure><p>PS:有一些教程需要另外部署nginx镜像和 ambassador 镜像，实测好像不需要。所以暂时不提供。</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">docker run -d --name rethinkdb -v &#x2F;srv&#x2F;rethinkdb:&#x2F;data --net host rethinkdb rethinkdb --bind all --cache-size 8192 --http-port 8090</span><br><span class="line">docker run -d --name adbd --privileged -v &#x2F;dev&#x2F;bus&#x2F;usb:&#x2F;dev&#x2F;bus&#x2F;usb --net host sorccu&#x2F;adb:latest</span><br><span class="line">docker run -d --name stf --net host openstf&#x2F;stf stf local --public-ip 192.168.1.100</span><br></pre></td></tr></table></figure><p>上面3行代码请分别执行，并把最后的192.168.1.100改为自己电脑的Ip地址。</p><p>PS:有一些教程需要关闭selinux，测试也好像不太需要。但是防火墙是必须关掉的，否则7100端口无法访问，我们也执行这行命令</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl stop firewalld.service</span><br></pre></td></tr></table></figure><p>最后完成一切部署，愉快打开</p><p><a href="http://192.168.1.123:7100/auth">http://192.168.1.123:7100/</a></p><h2 id="4、OpenSTF使用"><a href="#4、OpenSTF使用" class="headerlink" title="4、OpenSTF使用"></a>4、OpenSTF使用</h2><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-17-1024x750.png"></p><p>这里名字和邮箱是随便填的，我也搞不懂外国人脑回路</p><p>他们也提供一个管理员的账号密码</p><blockquote><p>name: administrator<br>email: <a href="mailto:&#x61;&#x64;&#109;&#105;&#110;&#105;&#x73;&#116;&#114;&#x61;&#116;&#111;&#x72;&#x40;&#x66;&#x61;&#x6b;&#101;&#100;&#x6f;&#x6d;&#x61;&#105;&#110;&#x2e;&#x63;&#111;&#109;">&#x61;&#x64;&#109;&#105;&#110;&#105;&#x73;&#116;&#114;&#x61;&#116;&#111;&#x72;&#x40;&#x66;&#x61;&#x6b;&#101;&#100;&#x6f;&#x6d;&#x61;&#105;&#110;&#x2e;&#x63;&#111;&#109;</a></p></blockquote><p>进入后选择Setting即可修改语言</p><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-18-1024x203.png"></p><p>注意手机需要在开发者中心，开启USB调试，某些手机还需要启动 USB安装、USB点击。</p><h2 id="5、结语"><a href="#5、结语" class="headerlink" title="5、结语"></a>5、结语</h2><p>很多国产测试软件是基于他的minicap进行修改，例如AirtestIDE、Appetizer，我们费那么大力气来安装OpenSTF也是看到鼻祖的真容，里面有一些自动化测试工具还得我继续研究。本文暂结于此。</p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;h2 id=&quot;0、序言&quot;&gt;&lt;a href=&quot;#0、序言&quot; class=&quot;headerlink&quot; title=&quot;0、序言&quot;&gt;&lt;/a&gt;0、序言&lt;/h2&gt;&lt;p&gt;最佳实践是在我测试过几个方法后的方法总结，如果有更好，可以评论中告知。本系统基于上篇文章的后续，使用Xshell链接实体机。</summary>
+      
+    
+    
+    
+    <category term="软件经验" scheme="https://dengzile.com/categories/%E8%BD%AF%E4%BB%B6%E7%BB%8F%E9%AA%8C/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>CentOS7 实体机安装的最佳实践</title>
+    <link href="https://dengzile.com/2020/03/11/centos7-%E7%B3%BB%E7%BB%9F%E5%AE%9E%E4%BD%93%E6%9C%BA%E5%AE%89%E8%A3%85%E8%BF%87%E7%A8%8B/"/>
+    <id>https://dengzile.com/2020/03/11/centos7-%E7%B3%BB%E7%BB%9F%E5%AE%9E%E4%BD%93%E6%9C%BA%E5%AE%89%E8%A3%85%E8%BF%87%E7%A8%8B/</id>
+    <published>2020-03-11T11:34:56.000Z</published>
+    <updated>2020-12-30T19:00:48.703Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="0、序章"><a href="#0、序章" class="headerlink" title="0、序章"></a>0、序章</h2><p>0x0 我们平时在阿里云等云服务器配置CentOs7系统很简单，只需要点一点即可，但是我们始终要部署到实体机做一些只有实体机才能做的事情，例如我们要部署OpenSTF服务。于是，我开始尝试安装CentOs之旅。</p><p>0x1 首先要准备一个空U盘</p><p>0x2 进入阿里的镜像下载，为什么要选这个，因为我尝试过其他镜像或者CentOs8，他默认Yum是国外的源众所周知原因，速度太慢，导致很多错误，所以我选择阿里云这个CentOs镜像。下载后，Yum默认是阿里的源。<a href="https://mirrors.aliyun.com/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1908.iso">CentOS-7-x86_64-DVD-1908.iso</a></p><p><a href="https://mirrors.aliyun.com/centos/7/isos/x86_64/">https://mirrors.aliyun.com/centos/7/isos/x86_64/</a></p><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-4.png"></p><p>0x3 下载后，我们需要UltraISO，我们找一个绿色单文件版即可，有一些是无法进行硬盘刻录的，我们必须要选对，如果怕中毒，可以直接选择一个官方版，不用注册可以用所有功能。</p><p><a href="http://www.upantool.com/qidong/2011/UltraISO_V9.3.6.2750.html">http://www.upantool.com/qidong/2011/UltraISO_V9.3.6.2750.html</a></p><p>0x4 打开镜像后，插入你的空白U盘，选择写入硬盘镜像，选对U盘位置，写入方式为USB-HDD+。</p><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-5.png"></p><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-6.png"></p><h2 id="1、开始安装"><a href="#1、开始安装" class="headerlink" title="1、开始安装"></a>1、开始安装</h2><p>0x1 U盘插入电脑后，在Bios使用期进行驱动即可。(某些主板按F11或者F2)，选择第一项进行安装。</p><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-7.png"></p><p>0x2 按照图文步骤进入下一步</p><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-8-1024x768.png"></p><p>0x3 在这个界面，我们需要注意几个步骤，软件安装、安装位置、网络及主机名。软件选择建议选择【带GUI界面的服务器】，可以方便在实体机进行一些网络设置而不是只一直打命令。</p><p>我第一次选择最小化安装，连网卡也没打开，ifconfig等常用命令亦未安装，浪费了不少时间研究。</p><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-9-1024x768.png"></p><p>0x4 安装位置主要选择你的硬盘而不要选错U盘。因为如果你之前是Windows系统，你分区铁定不够，基本需要删掉所有分区。在点击完成的时候，他会提示你回收空间。按照提示回收即可删除所有分区。</p><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-10-1024x768.png"></p><p>0x5 网络和主机名，Centos默认不会打开任何网络，记得先打开，要不你SSH无法进入。</p><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-11-1024x768.png"></p><p>0x6 基本配置后，就直接点击开始安装即可，建议先设置Root密码和创建一个用户，因为用户你不创建，进入GUI界面，他也要你强制创建，并且强制要求设置一个强密码，而在这里创建用户，可以直接创建一个无密码用户，方便维护。</p><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-12-1024x768.png"></p><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-13-1024x768.png"></p><h2 id="2、结尾"><a href="#2、结尾" class="headerlink" title="2、结尾"></a>2、结尾</h2><p>其实Centos并不难装，只是搜索出来的教程基本在虚拟机安装，而国内的资料挺混乱，也是装了4~5次总结出来的结果，由于默认已经配好Aliyun的源，接下去安装Docker的速度也会大增，而不会受到影响。GUI界面对有实体机来说，比较方便处理一些小毛病，如果在服务器，应该也是不需要的。每一个人都要自己认为最佳实践方式，这个就是我认为暂时最佳实践安装Centos的方法。如果有更好，可以大家分享交流哟！</p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;h2 id=&quot;0、序章&quot;&gt;&lt;a href=&quot;#0、序章&quot; class=&quot;headerlink&quot; title=&quot;0、序章&quot;&gt;&lt;/a&gt;0、序章&lt;/h2&gt;&lt;p&gt;0x0 我们平时在阿里云等云服务器配置CentOs7系统很简单，只需要点一点即可，但是我们始终要部署到实体机做一些只有实体机</summary>
+      
+    
+    
+    
+    <category term="软件经验" scheme="https://dengzile.com/categories/%E8%BD%AF%E4%BB%B6%E7%BB%8F%E9%AA%8C/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>水星Mesh分布式路由 M6G小测</title>
+    <link href="https://dengzile.com/2020/03/02/%E6%B0%B4%E6%98%9Fmesh%E5%88%86%E5%B8%83%E5%BC%8F%E8%B7%AF%E7%94%B1-m6g%E5%B0%8F%E6%B5%8B/"/>
+    <id>https://dengzile.com/2020/03/02/%E6%B0%B4%E6%98%9Fmesh%E5%88%86%E5%B8%83%E5%BC%8F%E8%B7%AF%E7%94%B1-m6g%E5%B0%8F%E6%B5%8B/</id>
+    <published>2020-03-02T14:00:36.000Z</published>
+    <updated>2020-11-08T02:13:05.521Z</updated>
+    
+    <content type="html"><![CDATA[<p>一直对Mesh设备想做一个体验，Openwrt需要的道具和配置方式稍微会复杂一些。看到天猫百亿补贴，竟然有超低价！89元/个终端。</p><p>急不及待，买2个试试，因为很多人有这个困扰，路由覆盖家不全面，导致网络不稳定，用信号放大器，只不过是一个WDS中继，而新手机支持802.11s和802.11r。</p><p><img src="https://dengzile.com/wp-content/uploads/2020/03/IMG_20200302_174754.jpg"></p><p>外观感觉还行，178元，你要啥自行车呢！</p><p>链接也很方便，直接插wan口，使用手机配置一下。另外一个，直接按键配置即可，非常便捷！</p><p>因为这个是千兆端口，我连接后测速，很诡异的只有100Mbps。</p><p>于是排查原因，商家竟然送了一条百兆网线。。</p><p>双频1200M也只是Wifi5低端路由的配置，但是对于普通家庭来说，我认为挺足够了。对手机信号黑点位置有很多扩展，无天线设计也很小巧融入家庭环境内。</p><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-1024x767.png"></p><p>很多年前用廉价路由的界面，界面已经有一个质的飞跃，功能颇齐全。Ipv6也已经支持。</p><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-1-1024x613.png"></p><p>不太满意是，DDNS服务只有花生壳可选。</p><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-2-1024x490.png"></p><p>Wifi页面有AP隔离，可以防止一些攻击。</p><p><img src="https://dengzile.com/wp-content/uploads/2020/03/image-3-1024x653.png"></p><p>在线升级、恢复出厂设置都可以控制子设备，很棒。</p><p><img src="https://dengzile.com/wp-content/uploads/2020/03/Screenshot_2020-03-02-21-30-03-343_org.zwanoo.android.speedtest-473x1024.jpg"></p><p>在路由隔壁，200M电信宽带，能跑出299Mbps的成绩。</p><p>而作为主路由，隔了一股墙的2015年买的小米路由器2(R2D)，在带宽规格上，比他略快一些，达到了。 303Mbps</p><p><img src="https://dengzile.com/wp-content/uploads/2020/03/Screenshot_2020-03-02-21-28-58-126_org.zwanoo.android.speedtest-473x1024.jpg"></p><p>对于普通用户来说，一个简单易用，Mesh最低价格路由，有此成绩也实属不易。</p><p>只能吐槽一下商家，明明千兆端口，送了2根百兆网线是什么骚操作。</p><p>路由这类产品，硬件配置是一方面，软件也很重要，至于稳定性，需要慢慢使用才知道。</p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;一直对Mesh设备想做一个体验，Openwrt需要的道具和配置方式稍微会复杂一些。看到天猫百亿补贴，竟然有超低价！89元/个终端。&lt;/p&gt;
+&lt;p&gt;急不及待，买2个试试，因为很多人有这个困扰，路由覆盖家不全面，导致网络不稳定，用信号放大器，只不过是一个WDS中继，而新手机支持</summary>
+      
+    
+    
+    
+    <category term="硬件杂谈" scheme="https://dengzile.com/categories/%E7%A1%AC%E4%BB%B6%E6%9D%82%E8%B0%88/"/>
+    
+    
+  </entry>
+  
+</feed>
